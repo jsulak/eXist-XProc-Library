@@ -54,70 +54,17 @@
       </p:input>
     </p:set-attributes>
 
-    <!-- TODO: Create utility "safe" http request step -->
-    <p:try name="request-block">
-      <p:group>
-        <p:http-request name="request"/>
-      </p:group>
-      <p:catch>
-        <p:identity>
-          <p:input port="source">
-            <p:inline>
-              <c:result>Fail: No response from server</c:result>
-            </p:inline>
-          </p:input>
-        </p:identity>
-      </p:catch>
-    </p:try>
+    <wxp:safe-http-request />
 
-    <p:identity name="response"/>
-
-
-    <!-- TODO:  Create utility error-handling step that can be passed a status to check against -->
-    <p:choose name="determine-result">
-      <p:when test="/c:response/@status = '201'">
-        <p:identity>
-          <p:input port="source">
-            <p:inline>
-              <c:result>Success</c:result>
-            </p:inline>
-          </p:input>
-        </p:identity>
-      </p:when>
-      <p:otherwise>
-        <p:choose>
-          <p:when test="$failonerror = 'true'">
-            <p:output port="result">
-              <p:inline>
-                <nop/>
-              </p:inline>
-            </p:output>
-            <p:error>
-              <!-- This doesn't seem to quite work yet. -->
-              <!-- Not really sure how to test this. -->
-              <p:with-option name="code" select="concat('R', /c:response/@status)"/>
-              <p:input port="source">
-                <p:pipe step="response" port="result"/>
-              </p:input>
-            </p:error>
-          </p:when>
-          <p:otherwise>
-            <p:output port="result">
-              <p:inline>
-                <c:result>Fail</c:result>
-              </p:inline>
-            </p:output>
-            <p:sink/>
-          </p:otherwise>
-        </p:choose>
-      </p:otherwise>
-    </p:choose>
+    <wxp:check-status success-status="201" >
+      <p:with-option name="failonerror" select="$failonerror" />
+    </wxp:check-status>
 
     <p:identity name="result"/>
 
   </p:declare-step>
 
-
+  
   <!-- TODO: Replace POST request with DELETE request once it works in Calabash. -->
 
   <p:declare-step type="ex:remove" name="remove-def">
@@ -230,6 +177,77 @@
       />
     </p:string-replace>
   </p:declare-step>
+
+
+  <p:declare-step type="wxp:safe-http-request">
+    <p:input port="source" />
+    <p:output port="result" />
+    
+    <p:try name="request-block">
+      <p:group>
+        <p:http-request name="request"/>
+      </p:group>
+      <p:catch>
+        <p:identity>
+          <p:input port="source">
+            <p:inline>
+              <c:result>Fail: No response from server</c:result>
+            </p:inline>
+          </p:input>
+        </p:identity>
+      </p:catch>
+    </p:try>
+  </p:declare-step>
+
+
+  <!-- Utility step for checking an http-response status -->
+  <p:declare-step type="wxp:check-status" name="check-status">
+    <p:input port="source" />
+    <p:output port="result" />
+    
+    <p:option name="success-status" required="true" />
+    <p:option name="failonerror" required="true" />
+    
+    <p:choose name="determine-result">
+      <p:when test="/c:response/@status = $success-status">
+        <p:identity>
+          <p:input port="source">
+            <p:inline>
+              <c:result>Success</c:result>
+            </p:inline>
+          </p:input>
+        </p:identity>
+      </p:when>
+      <p:otherwise>
+        <p:choose>
+          <p:when test="$failonerror = 'true'">
+            <p:output port="result">
+              <p:inline>
+                <nop/>
+              </p:inline>
+            </p:output>
+            <p:error>
+              <!-- This doesn't seem to quite work yet. -->
+              <!-- Not really sure how to test this. -->
+              <p:with-option name="code" select="concat('R', /c:response/@status)"/>
+              <p:input port="source">
+                <p:pipe step="check-status" port="source"/>
+              </p:input>
+            </p:error>
+          </p:when>
+          <p:otherwise>
+            <p:output port="result">
+              <p:inline>
+                <c:result>Fail</c:result>
+              </p:inline>
+            </p:output>
+            <p:sink/>
+          </p:otherwise>
+        </p:choose>
+      </p:otherwise>
+    </p:choose>
+  </p:declare-step>
+
 
 
 
