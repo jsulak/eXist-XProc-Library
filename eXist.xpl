@@ -48,23 +48,22 @@
     <p:set-attributes match="c:request">
       <p:input port="attributes">
         <p:inline>
-          <c:request method="put" auth-method="Basic" send-authorization="true" detailed="true"
-            status-only="true"/>
+          <c:request method="put" auth-method="Basic" send-authorization="true" detailed="true" status-only="true"/>
         </p:inline>
       </p:input>
     </p:set-attributes>
 
-    <wxp:safe-http-request />
+    <wxp:safe-http-request/>
 
-    <wxp:check-status success-status="201" >
-      <p:with-option name="failonerror" select="$failonerror" />
+    <wxp:check-status success-status="201">
+      <p:with-option name="failonerror" select="$failonerror"/>
     </wxp:check-status>
 
     <p:identity name="result"/>
 
   </p:declare-step>
 
-  
+
   <!-- TODO: Replace POST request with DELETE request once it works in Calabash. -->
 
   <p:declare-step type="ex:remove" name="remove-def">
@@ -83,12 +82,12 @@
 
 
     <!-- TODO: Check to make sure that one of collection or resource is defined -->
-    
+
     <p:identity>
       <p:input port="source">
         <p:inline>
-          <c:request method="post" auth-method="Basic" send-authorization="true" detailed="true"
-            username="${user}" password="${password}" href="${uri}">
+          <c:request method="post" auth-method="Basic" send-authorization="true" detailed="true" username="${user}"
+            password="${password}" href="${uri}">
             <c:body content-type="text/xml">
               <query xmlns="http://exist.sourceforge.net/NS/exist" start="1" max="20" cache="no">
                 <text>
@@ -135,6 +134,10 @@
 
     <wxp:safe-http-request/>
 
+    <wxp:check-status success-status="200">
+      <p:with-option name="failonerror" select="$failonerror"/>
+    </wxp:check-status>
+
   </p:declare-step>
 
 
@@ -176,16 +179,21 @@
 
     <p:string-replace match="text() | attribute()">
       <p:with-option name="replace"
-        select="concat('replace(., &quot;\$\{', $placeholder, '\}&quot;,&quot;', $value, '&quot;)')"
-      />
+        select="concat('replace(., &quot;\$\{', $placeholder, '\}&quot;,&quot;', $value, '&quot;)')"/>
     </p:string-replace>
   </p:declare-step>
 
 
+
+
+  <!-- ================================= -->
+  <!-- Utility Steps -->
+  <!-- ================================= -->
+
   <p:declare-step type="wxp:safe-http-request">
-    <p:input port="source" />
-    <p:output port="result" />
-    
+    <p:input port="source"/>
+    <p:output port="result"/>
+
     <p:try name="request-block">
       <p:group>
         <p:http-request name="request"/>
@@ -205,13 +213,14 @@
 
   <!-- Utility step for checking an http-response status -->
   <p:declare-step type="wxp:check-status" name="check-status">
-    <p:input port="source" />
-    <p:output port="result" />
-    
-    <p:option name="success-status" required="true" />
-    <p:option name="failonerror" required="true" />
-    
+    <p:input port="source"/>
+    <p:output port="result"/>
+
+    <p:option name="success-status" required="true"/>
+    <p:option name="failonerror" required="true"/>
+
     <p:choose name="determine-result">
+      <!-- First, check if it worked -->
       <p:when test="/c:response/@status = $success-status">
         <p:identity>
           <p:input port="source">
@@ -221,30 +230,24 @@
           </p:input>
         </p:identity>
       </p:when>
+      <!-- If not, then determine if we need to fail loudly or quietly -->
       <p:otherwise>
         <p:choose>
-          <p:when test="$failonerror = 'true'">
-            <p:output port="result">
-              <p:inline>
-                <nop/>
-              </p:inline>
-            </p:output>
+          <p:when test="$failonerror = 'true'">            
             <p:error>
-              <!-- This doesn't seem to quite work yet. -->
+              <!-- I think this is correct, but Calabash always reports "No outputs allowed" -->
               <!-- Not really sure how to test this. -->
               <p:with-option name="code" select="concat('R', /c:response/@status)"/>
-              <p:input port="source">
-                <p:pipe step="check-status" port="source"/>
-              </p:input>
             </p:error>
           </p:when>
           <p:otherwise>
-            <p:output port="result">
-              <p:inline>
-                <c:result>Fail</c:result>
-              </p:inline>
-            </p:output>
-            <p:sink/>
+            <p:replace match="/*">
+              <p:input port="replacement">
+                <p:inline>
+                  <c:result>Fail</c:result>
+                </p:inline>
+              </p:input>
+            </p:replace>
           </p:otherwise>
         </p:choose>
       </p:otherwise>
