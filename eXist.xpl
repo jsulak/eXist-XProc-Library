@@ -15,6 +15,8 @@
   </p:documentation>
 
 
+  <!-- TODO: Make this handle a sequence of documents -->
+
   <p:declare-step type="ex:store" name="store-def">
     <p:documentation>
       <p><b>Input:</b> A single XML document.</p>
@@ -141,6 +143,50 @@
   </p:declare-step>
 
 
+  <!-- TODO: handle sequence of documents? -->
+ 
+  <p:declare-step type="ex:xquery">
+    <p:input port="source" primary="true"/>
+    <p:output port="result" primary="true"/>
+
+    <p:option name="uri" />
+    <p:option name="user"/>
+    <p:option name="password"/>
+    <p:option name="failonerror" select="'false'"/>    
+    
+    <!-- Change the xproc document namespace to the exist namespace -->
+    <p:namespace-rename from="http://www.w3.org/ns/xproc-step" to="http://exist.sourceforge.net/NS/exist" name="rename" />
+
+    <!-- Insert actual query -->
+    <p:replace match="exist:query">
+      <p:input port="source">
+        <p:inline>
+          <c:request method="post" auth-method="Basic" send-authorization="true" detailed="true" username="${user}"
+            password="${password}" href="${uri}">
+            <c:body content-type="text/xml">
+              <exist:query/>               
+            </c:body>
+          </c:request>
+        </p:inline>
+      </p:input>
+      <p:input port="replacement">
+        <p:pipe port="result" step="rename" />        
+      </p:input>
+    </p:replace>  
+
+    <wxp:resolve-placeholder placeholder="user">
+      <p:with-option name="value" select="$user"/>
+    </wxp:resolve-placeholder>
+    <wxp:resolve-placeholder placeholder="password">
+      <p:with-option name="value" select="$password"/>
+    </wxp:resolve-placeholder>
+    <wxp:resolve-placeholder placeholder="uri">
+      <p:with-option name="value" select="$uri"/>
+    </wxp:resolve-placeholder>
+
+    <wxp:safe-http-request />
+
+  </p:declare-step>
 
 
 
@@ -170,6 +216,11 @@
   </p:declare-step>
 
 
+
+  <!-- ================================= -->
+  <!-- Utility Steps -->
+  <!-- ================================= -->
+
   <!-- Utility step for resolving inline placeholding variables -->
   <p:declare-step type="wxp:resolve-placeholder">
     <p:input port="source" primary="true"/>
@@ -183,12 +234,6 @@
     </p:string-replace>
   </p:declare-step>
 
-
-
-
-  <!-- ================================= -->
-  <!-- Utility Steps -->
-  <!-- ================================= -->
 
   <p:declare-step type="wxp:safe-http-request">
     <p:input port="source"/>
@@ -233,7 +278,7 @@
       <!-- If not, then determine if we need to fail loudly or quietly -->
       <p:otherwise>
         <p:choose>
-          <p:when test="$failonerror = 'true'">            
+          <p:when test="$failonerror = 'true'">
             <p:error>
               <!-- I think this is correct, but Calabash always reports "No outputs allowed" -->
               <!-- Not really sure how to test this. -->
