@@ -91,7 +91,8 @@
             username="${user}" password="${password}" href="${uri}">
             <c:body content-type="text/xml">
               <query xmlns="http://exist.sourceforge.net/NS/exist" start="1" max="20" cache="no">
-                <text>import module namespace xdb="http://exist-db.org/xquery/xmldb";
+                <text>
+                  import module namespace xdb="http://exist-db.org/xquery/xmldb";
                   let $server := "xmldb:exist:///db"
                   let $user := "${user}"
                   let $pass := "${password}"
@@ -132,11 +133,13 @@
       <p:with-option name="value" select="$collection"/>
     </wxp:resolve-placeholder>
 
-
-    <!-- This doesn't work -->
-    <p:http-request/>
+    <wxp:safe-http-request/>
 
   </p:declare-step>
+
+
+
+
 
 
   <p:declare-step type="ex:create" name="create-def">
@@ -247,8 +250,6 @@
       </p:otherwise>
     </p:choose>
   </p:declare-step>
-
-
 
 
 </p:library>
