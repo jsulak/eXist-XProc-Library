@@ -14,7 +14,6 @@
     </div>
   </p:documentation>
 
-
   <!-- TODO: Make this handle a sequence of documents -->
 
   <p:declare-step type="ex:store" name="store-def">
@@ -29,8 +28,9 @@
     </p:output>
 
     <p:option name="uri" required="true"/>
-    <p:option name="user"/>
-    <p:option name="password"/>
+    <p:option name="resource" required="true" />
+    <p:option name="user" required="true"/>
+    <p:option name="password" required="true"/>
     <p:option name="failonerror" select="'false'"/>
 
     <p:wrap wrapper="c:body" match="/"/>
@@ -44,8 +44,9 @@
     <p:add-attribute attribute-name="password" match="/c:request">
       <p:with-option name="attribute-value" select="$password"/>
     </p:add-attribute>
+    <!-- TODO:  Error checking to make sure that the slash, etc. actually work out -->
     <p:add-attribute attribute-name="href" match="/c:request">
-      <p:with-option name="attribute-value" select="$uri"/>
+      <p:with-option name="attribute-value" select="concat($uri, '/', $resource)"/>
     </p:add-attribute>
     <p:set-attributes match="c:request">
       <p:input port="attributes">
@@ -71,11 +72,11 @@
   <p:declare-step type="ex:remove" name="remove-def">
     <p:output port="result" primary="true"/>
 
-    <p:option name="uri"/>
+    <p:option name="uri" required="true"/>
     <p:option name="collection" select="''"/>
     <p:option name="resource" select="''"/>
-    <p:option name="user"/>
-    <p:option name="password"/>
+    <p:option name="user" required="true"/>
+    <p:option name="password" required="true"/>
     <p:option name="failonerror" select="'false'"/>
 
     <p:variable name="path" select="replace(substring-after($uri, 'rest/'), '/$', '')">
@@ -93,14 +94,9 @@
             <c:body content-type="text/xml">
               <query xmlns="http://exist.sourceforge.net/NS/exist" start="1" max="20" cache="no">
                 <text>
-                  import module namespace xdb="http://exist-db.org/xquery/xmldb";
-                  let $server := "xmldb:exist:///db"
-                  let $user := "${user}"
-                  let $pass := "${password}"
+                  import module namespace xdb="http://exist-db.org/xquery/xmldb";                
                   let $resource := "${resource}"
-                  let $collection := "${collection}"
-                  
-                  let $login := xdb:login($server, $user, $pass)                      
+                  let $collection := "${collection}"                                            
                   let $response := if ($resource != '') 
                                    then xdb:remove("/${path}/", "${resource}")
                                    else xdb:remove("/${path}/${collection}")
@@ -144,18 +140,18 @@
 
 
   <!-- TODO: handle sequence of documents? -->
- 
-  <p:declare-step type="ex:xquery">
+
+  <p:declare-step type="ex:xquery" name="xquery-def">
     <p:input port="source" primary="true"/>
     <p:output port="result" primary="true"/>
 
-    <p:option name="uri" />
-    <p:option name="user"/>
-    <p:option name="password"/>
-    <p:option name="failonerror" select="'false'"/>    
-    
+    <p:option name="uri" required="true"/>
+    <p:option name="user" required="true"/>
+    <p:option name="password" required="true"/>
+    <p:option name="failonerror" select="'false'"/>
+
     <!-- Change the xproc document namespace to the exist namespace -->
-    <p:namespace-rename from="http://www.w3.org/ns/xproc-step" to="http://exist.sourceforge.net/NS/exist" name="rename" />
+    <p:namespace-rename from="http://www.w3.org/ns/xproc-step" to="http://exist.sourceforge.net/NS/exist" name="rename"/>
 
     <!-- Insert actual query -->
     <p:replace match="exist:query">
@@ -164,15 +160,15 @@
           <c:request method="post" auth-method="Basic" send-authorization="true" detailed="true" username="${user}"
             password="${password}" href="${uri}">
             <c:body content-type="text/xml">
-              <exist:query/>               
+              <exist:query/>
             </c:body>
           </c:request>
         </p:inline>
       </p:input>
       <p:input port="replacement">
-        <p:pipe port="result" step="rename" />        
+        <p:pipe port="result" step="rename"/>
       </p:input>
-    </p:replace>  
+    </p:replace>
 
     <wxp:resolve-placeholder placeholder="user">
       <p:with-option name="value" select="$user"/>
@@ -184,22 +180,53 @@
       <p:with-option name="value" select="$uri"/>
     </wxp:resolve-placeholder>
 
-    <wxp:safe-http-request />
+    <wxp:safe-http-request/>
 
   </p:declare-step>
-
-
 
 
   <p:declare-step type="ex:create" name="create-def">
     <p:output port="result" primary="true"/>
 
-    <p:option name="uri"/>
-    <p:option name="user"/>
-    <p:option name="password"/>
-    <p:option name="failonerror" select="'false'"/>
+    <p:option name="uri" required="true"/>
+    <p:option name="user" required="true"/>
+    <p:option name="password" required="true"/>
+    <p:option name="failonerror" select="'false'"/>    
+    <p:option name="collection" required="true"/>
 
-    <p:option name="collection"/>
+    <p:variable name="parent-collection" select="replace($uri, '.*(/db.*)$', '$1')">
+      <p:empty />      
+    </p:variable>
+
+    <p:identity>
+      <p:input port="source">
+        <p:inline>
+          <c:query xmlns="http://exist.sourceforge.net/NS/exist" start="1" max="20" cache="no">
+            <c:text>
+                  import module namespace xdb="http://exist-db.org/xquery/xmldb";               
+                  let $parent-collection := "${parent-collection}"
+                  let $collection := "${collection}"                                               
+                  let $response := xdb:create-collection($parent-collection, $collection)
+                  return $response
+            </c:text>
+          </c:query>
+        </p:inline>
+      </p:input>
+    </p:identity>
+
+    <wxp:resolve-placeholder placeholder="parent-collection">
+      <p:with-option name="value" select="$parent-collection"/>
+    </wxp:resolve-placeholder>
+    <wxp:resolve-placeholder placeholder="collection">
+      <p:with-option name="value" select="$collection"/>
+    </wxp:resolve-placeholder>
+
+    <ex:xquery>
+      <p:with-option name="user" select="$user"/>
+      <p:with-option name="password" select="$password"/>
+      <p:with-option name="uri" select="$uri"/>
+    </ex:xquery>
+
   </p:declare-step>
 
 
