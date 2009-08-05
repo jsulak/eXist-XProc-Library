@@ -157,8 +157,7 @@
     <p:replace match="exist:query">
       <p:input port="source">
         <p:inline>
-          <c:request method="post" auth-method="Basic" send-authorization="true" detailed="true" username="${user}"
-            password="${password}" href="${uri}">
+          <c:request method="post" auth-method="Basic" send-authorization="true" detailed="true">
             <c:body content-type="text/xml">
               <exist:query/>
             </c:body>
@@ -170,15 +169,15 @@
       </p:input>
     </p:replace>
 
-    <wxp:resolve-placeholder placeholder="user">
-      <p:with-option name="value" select="$user"/>
-    </wxp:resolve-placeholder>
-    <wxp:resolve-placeholder placeholder="password">
-      <p:with-option name="value" select="$password"/>
-    </wxp:resolve-placeholder>
-    <wxp:resolve-placeholder placeholder="uri">
-      <p:with-option name="value" select="$uri"/>
-    </wxp:resolve-placeholder>
+    <p:add-attribute match="c:request" attribute-name="password">
+      <p:with-option name="attribute-value" select="$password" />
+    </p:add-attribute>
+    <p:add-attribute match="c:request" attribute-name="username">
+      <p:with-option name="attribute-value" select="$user" />
+    </p:add-attribute>
+    <p:add-attribute match="c:request" attribute-name="href">
+      <p:with-option name="attribute-value" select="$uri" />
+    </p:add-attribute>
 
     <wxp:safe-http-request/>
 
