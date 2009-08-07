@@ -15,6 +15,7 @@
   </p:documentation>
 
   <!-- TODO: Make this handle a sequence of documents -->
+  <!-- TODO: Make it conditionally create collections -->
 
   <p:declare-step type="ex:store" name="store-def">
     <p:documentation>
@@ -23,9 +24,7 @@
     </p:documentation>
 
     <p:input port="source" primary="true"/>
-    <p:output port="result">
-      <p:pipe port="result" step="result"/>
-    </p:output>
+    <p:output port="result" />    
 
     <p:option name="uri" required="true"/>
     <p:option name="resource" required="true" />
@@ -62,8 +61,6 @@
       <p:with-option name="failonerror" select="$failonerror"/>
     </wxp:check-status>
 
-    <p:identity name="result"/>
-
   </p:declare-step>
 
 
@@ -71,35 +68,41 @@
 
   <p:declare-step type="ex:remove" name="remove-def">
     <p:output port="result" primary="true"/>
-
-    <p:option name="uri" required="true"/>
+    
+    <p:option name="uri"/>
     <p:option name="collection" select="''"/>
     <p:option name="resource" select="''"/>
-    <p:option name="user" required="true"/>
-    <p:option name="password" required="true"/>
+    <p:option name="user"/>
+    <p:option name="password"/>
     <p:option name="failonerror" select="'false'"/>
-
+    
     <p:variable name="path" select="replace(substring-after($uri, 'rest/'), '/$', '')">
       <p:empty/>
     </p:variable>
-
-
+    
+    
     <!-- TODO: Check to make sure that one of collection or resource is defined -->
-
+    <!-- NOTE: Not sure why the following query requires xdb:login.  The create action does not. -->
+    
     <p:identity>
       <p:input port="source">
         <p:inline>
-          <c:request method="post" auth-method="Basic" send-authorization="true" detailed="true" username="${user}"
-            password="${password}" href="${uri}">
+          <c:request method="post" auth-method="Basic" send-authorization="true" detailed="true"
+            username="${user}" password="${password}" href="${uri}">
             <c:body content-type="text/xml">
               <query xmlns="http://exist.sourceforge.net/NS/exist" start="1" max="20" cache="no">
                 <text>
-                  import module namespace xdb="http://exist-db.org/xquery/xmldb";                
+                  import module namespace xdb="http://exist-db.org/xquery/xmldb";
+                  let $server := "xmldb:exist:///db"
+                  let $user := "${user}"
+                  let $pass := "${password}"
                   let $resource := "${resource}"
-                  let $collection := "${collection}"                                            
+                  let $collection := "${collection}"
+                  
+                  let $login := xdb:login($server, $user, $pass)                      
                   let $response := if ($resource != '') 
-                                   then xdb:remove("/${path}/", "${resource}")
-                                   else xdb:remove("/${path}/${collection}")
+                  then xdb:remove("/${path}/", "${resource}")
+                  else xdb:remove("/${path}/${collection}")
                   return $response
                 </text>
               </query>
@@ -108,7 +111,7 @@
         </p:inline>
       </p:input>
     </p:identity>
-
+    
     <!-- Fill in the needed parameters -->
     <!-- NOTE: Or maybe even a generic construct-request that can take the specific function you want to complete as a parameter -->
     <wxp:resolve-placeholder placeholder="user">
@@ -129,13 +132,14 @@
     <wxp:resolve-placeholder placeholder="collection">
       <p:with-option name="value" select="$collection"/>
     </wxp:resolve-placeholder>
-
+    
     <wxp:safe-http-request/>
-
+    
     <wxp:check-status success-status="200">
       <p:with-option name="failonerror" select="$failonerror"/>
     </wxp:check-status>
-
+    
+    
   </p:declare-step>
 
 
