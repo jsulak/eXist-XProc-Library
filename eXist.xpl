@@ -14,16 +14,22 @@
     </div>
   </p:documentation>
 
+
   <!-- TODO: Make this handle a sequence of documents -->
   <!-- TODO: Make it conditionally create collections -->
+  <!-- TODO: Make c:result contain the absolute uri on success -->
+
+  <p:documentation xmlns="http://www.w3.org/1999/xhtml">
+    <h3>ex:store</h3>
+    <p>The <code>ex:store</code> step stores the document provided on the input port in an eXist database in the location provided by
+       The <code>uri</code> option.</p>
+    <p>It returns a <code>&lt;c:result/></code> containing the absolute URI of the stored file.  
+      If failonerror is set to true, then the step fails if the resource cannot be stored.  Otherwise, is returns a 
+      <code>&lt;c:result/></code> containing "Failure."</p>
+  </p:documentation>
 
   <p:declare-step type="ex:store" name="store-def">
-    <p:documentation>
-      <p><b>Input:</b> A single XML document.</p>
-      <p><b>Output:</b> A c:result element following the convention of p:store.</p>
-    </p:documentation>
-
-    <p:input port="source" primary="true"/>
+    <p:input port="source" primary="true" sequence="false"/>
     <p:output port="result" />    
 
     <p:option name="uri" required="true"/>
@@ -64,8 +70,18 @@
   </p:declare-step>
 
 
-  <!-- TODO: Replace POST request with DELETE request once it works in Calabash. -->
 
+  <p:documentation xmlns="http://www.w3.org/1999/xhtml">
+    <h3>ex:remove</h3>
+    <p>The <code>ex:remove</code> step removes a single resource or collection from the collection specified in the <code>uri</code> option.</p>
+    <p>It returns a <code>&lt;c:result/></code> containing the absolute URI of the deleted file.  
+      If failonerror is set to true, then the step fails if the resource does not exist or cannot be deleted.  Otherwise, is returns a 
+      <code>&lt;c:result/></code> containing "Failure."</p>
+  </p:documentation>
+
+  <!-- TODO: Replace POST request with DELETE request once it works in Calabash. -->
+  <!-- TODO: Make the c:result contain the actual uri of the deleted file -->
+  
   <p:declare-step type="ex:remove" name="remove-def">
     <p:output port="result" primary="true"/>
     
@@ -143,7 +159,14 @@
   </p:declare-step>
 
 
+  <p:documentation xmlns="http://www.w3.org/1999/xhtml">
+    <h3>ex:xquery</h3>
+    <p>The <code>ex:xquery</code> step executes an XQuery expression.</p>
+    <p>It expects the query to be wrapped in a <code>&lt;c:query></code>.  It returns the result of the expression in a <code>&lt;c:result></code>.</p>
+  </p:documentation>
+
   <!-- TODO: handle sequence of documents? -->
+  <!-- TODO: check result wrapper element -->
 
   <p:declare-step type="ex:xquery" name="xquery-def">
     <p:input port="source" primary="true"/>
@@ -188,6 +211,15 @@
   </p:declare-step>
 
 
+  <p:documentation xmlns="http://www.w3.org/1999/xhtml">
+    <h3>ex:create</h3>
+    <p>The <code>ex:create</code> step creates a single empty collection.  The name is specified in the <code>collection option</code>, and its 
+       location is specitied in the <code>uri</code> option.</p>
+    <p>It returns a <code>&lt;c:result/></code> containing the absolute URI of the created collection.  
+      If failonerror is set to true, then the step fails if the collection cannot be created.  Otherwise, is returns a 
+      <code>&lt;c:result/></code> containing "Failure."</p>
+  </p:documentation>
+  
   <p:declare-step type="ex:create" name="create-def">
     <p:output port="result" primary="true"/>
 
@@ -233,6 +265,14 @@
   </p:declare-step>
 
 
+  <p:documentation xmlns="http://www.w3.org/1999/xhtml">
+    <h3>ex:list</h3>
+    <p>The <code>ex:list</code> step returns a list of the resources and/or collections contained in the collection specified in the <code>uri</code> option.</p>
+    <p>It's behavior is modeled after <code>&lt;p:directory-list</code>.  It returns a <code>&lt;c:collection></code> containing a sequence of 
+       <code>&lt;c:resource</code> and <code>&lt;c:collection</code>s.  If failonerror is set to true, then the step fails if the resource does not 
+      exist or cannot be deleted.  Otherwise, is returns a <code>&lt;c:result/></code> containing "Failure."</p>
+  </p:documentation>
+  
   <p:declare-step type="ex:list" name="list-def">
     <p:output port="result" primary="true"/>
 
@@ -241,8 +281,38 @@
     <p:option name="password"/>
     <p:option name="failonerror" select="'false'"/>
 
-    <p:option name="reources"/>
-    <p:option name="collections"/>
+    <p:option name="resources" select="'true'"/>
+    <p:option name="collections" select="'true'"/>
+    
+    <p:load>
+      <p:with-option name="href" select="$uri">
+        <p:empty />
+      </p:with-option>
+    </p:load>
+     
+    <p:unwrap match="exist:result" />
+  
+    <p:rename match="exist:collection" new-name="c:collection" />
+    <p:rename match="exist:resource" new-name="c:resource" />
+    
+    <p:choose>
+      <p:when test="$resources = 'false'">
+        <p:delete match="c:resource" />
+      </p:when>
+      <p:otherwise>
+        <p:identity />
+      </p:otherwise>
+    </p:choose>
+    
+    <p:choose>
+      <p:when test="$collections = 'false'">
+        <p:delete match="*/c:collection" />
+      </p:when>
+      <p:otherwise>
+        <p:identity />
+      </p:otherwise>
+    </p:choose>
+    
   </p:declare-step>
 
 
@@ -264,6 +334,8 @@
     </p:string-replace>
   </p:declare-step>
 
+
+  <!-- TODO:  Make the failure messages actually valid -->
 
   <p:declare-step type="wxp:safe-http-request">
     <p:input port="source"/>
