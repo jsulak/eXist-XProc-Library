@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <p:library xmlns:p="http://www.w3.org/ns/xproc" xmlns:c="http://www.w3.org/ns/xproc-step"
-  xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:saxon="http://saxon.sf.net/"
-  xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:wxp="http://www.wordsinboxes.com/xproc"
-  xmlns:ex="http://www.wordsinboxes.com/xproc/exist">
+  xmlns:cx="http://xmlcalabash.com/ns/extensions" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+  xmlns:saxon="http://saxon.sf.net/" xmlns:exist="http://exist.sourceforge.net/NS/exist"
+  xmlns:wxp="http://www.wordsinboxes.com/xproc" xmlns:ex="http://www.wordsinboxes.com/xproc/exist">
 
   <p:documentation xmlns="http://www.w3.org/1999/xhtml">
     <div>
@@ -13,6 +13,74 @@
       <p>Public repository:  http://bitbucket.org/jasulak/exist-xproc-library/</p>
     </div>
   </p:documentation>
+
+
+  <p:import href="library-1.0.xpl"/>
+
+  <p:declare-step type="ex:extract">
+    <p:output port="result" sequence="true"/>
+
+    <p:option name="uri" required="true"/>
+    <p:option name="resource" required="true"/>
+    <p:option name="user"/>
+    <p:option name="password"/>
+    <p:option name="failonerror" select="'false'"/>
+
+    <p:load>
+      <p:with-option name="href" select="concat($uri, '/', $resource)">
+        <p:empty/>
+      </p:with-option>
+    </p:load>
+
+  </p:declare-step>
+
+
+  <!-- TODO: add xml base attributes -->
+  <p:declare-step type="ex:extract-collection">
+    <p:output port="result" sequence="true"/>
+
+    <p:option name="uri" required="true"/>
+    <p:option name="user"/>
+    <p:option name="password"/>
+    <p:option name="subcollections" select="'false'"/>
+    <p:option name="failonerror" select="'false'"/>
+
+    <ex:list>
+      <p:with-option name="uri" select="$uri">
+        <p:empty/>
+      </p:with-option>
+      <p:with-option name="collections" select="$subcollections">
+        <p:empty/>
+      </p:with-option>
+    </ex:list>
+
+    <p:for-each>
+      <p:iteration-source select="/c:collection/*"/>
+      <p:output port="result" sequence="true"/>
+
+      <p:choose>
+        <p:when test="c:resource">
+          <cx:message>
+            <p:with-option name="message" select="concat('resource: ', $uri, '/', c:resource/@name)"/>
+          </cx:message>
+          <ex:extract>
+            <p:with-option name="uri" select="$uri"/>
+            <p:with-option name="resource" select="c:resource/@name"/>
+          </ex:extract>
+        </p:when>
+        <p:otherwise>
+          <cx:message>
+            <p:with-option name="message" select="concat('collection: ', $uri, '/', c:collection/@name)"/>
+          </cx:message>
+          <ex:extract-collection subcollections="true">
+            <p:with-option name="uri" select="concat($uri, '/', c:collection/@name)"/>
+          </ex:extract-collection>
+        </p:otherwise>
+      </p:choose>
+
+    </p:for-each>
+
+  </p:declare-step>
 
 
   <!-- TODO: Make this handle a sequence of documents -->
@@ -30,10 +98,10 @@
 
   <p:declare-step type="ex:store" name="store-def">
     <p:input port="source" primary="true" sequence="false"/>
-    <p:output port="result" />    
+    <p:output port="result"/>
 
     <p:option name="uri" required="true"/>
-    <p:option name="resource" required="true" />
+    <p:option name="resource" required="true"/>
     <p:option name="user" required="true"/>
     <p:option name="password" required="true"/>
     <p:option name="failonerror" select="'false'"/>
@@ -81,30 +149,30 @@
 
   <!-- TODO: Replace POST request with DELETE request once it works in Calabash. -->
   <!-- TODO: Make the c:result contain the actual uri of the deleted file -->
-  
+
   <p:declare-step type="ex:remove" name="remove-def">
     <p:output port="result" primary="true"/>
-    
+
     <p:option name="uri"/>
     <p:option name="collection" select="''"/>
     <p:option name="resource" select="''"/>
     <p:option name="user"/>
     <p:option name="password"/>
     <p:option name="failonerror" select="'false'"/>
-    
+
     <p:variable name="path" select="replace(substring-after($uri, 'rest/'), '/$', '')">
       <p:empty/>
     </p:variable>
-    
-    
+
+
     <!-- TODO: Check to make sure that one of collection or resource is defined -->
     <!-- NOTE: Not sure why the following query requires xdb:login.  The create action does not. -->
-    
+
     <p:identity>
       <p:input port="source">
         <p:inline>
-          <c:request method="post" auth-method="Basic" send-authorization="true" detailed="true"
-            username="${user}" password="${password}" href="${uri}">
+          <c:request method="post" auth-method="Basic" send-authorization="true" detailed="true" username="${user}"
+            password="${password}" href="${uri}">
             <c:body content-type="text/xml">
               <query xmlns="http://exist.sourceforge.net/NS/exist" start="1" max="20" cache="no">
                 <text>
@@ -127,7 +195,7 @@
         </p:inline>
       </p:input>
     </p:identity>
-    
+
     <!-- Fill in the needed parameters -->
     <!-- NOTE: Or maybe even a generic construct-request that can take the specific function you want to complete as a parameter -->
     <wxp:resolve-placeholder placeholder="user">
@@ -148,14 +216,14 @@
     <wxp:resolve-placeholder placeholder="collection">
       <p:with-option name="value" select="$collection"/>
     </wxp:resolve-placeholder>
-    
+
     <wxp:safe-http-request/>
-    
+
     <wxp:check-status success-status="200">
       <p:with-option name="failonerror" select="$failonerror"/>
     </wxp:check-status>
-    
-    
+
+
   </p:declare-step>
 
 
@@ -197,13 +265,13 @@
     </p:replace>
 
     <p:add-attribute match="c:request" attribute-name="password">
-      <p:with-option name="attribute-value" select="$password" />
+      <p:with-option name="attribute-value" select="$password"/>
     </p:add-attribute>
     <p:add-attribute match="c:request" attribute-name="username">
-      <p:with-option name="attribute-value" select="$user" />
+      <p:with-option name="attribute-value" select="$user"/>
     </p:add-attribute>
     <p:add-attribute match="c:request" attribute-name="href">
-      <p:with-option name="attribute-value" select="$uri" />
+      <p:with-option name="attribute-value" select="$uri"/>
     </p:add-attribute>
 
     <wxp:safe-http-request/>
@@ -219,18 +287,18 @@
       If failonerror is set to true, then the step fails if the collection cannot be created.  Otherwise, is returns a 
       <code>&lt;c:result/></code> containing "Failure."</p>
   </p:documentation>
-  
+
   <p:declare-step type="ex:create" name="create-def">
     <p:output port="result" primary="true"/>
 
     <p:option name="uri" required="true"/>
     <p:option name="user" required="true"/>
     <p:option name="password" required="true"/>
-    <p:option name="failonerror" select="'false'"/>    
+    <p:option name="failonerror" select="'false'"/>
     <p:option name="collection" required="true"/>
 
     <p:variable name="parent-collection" select="replace($uri, '.*(/db.*)$', '$1')">
-      <p:empty />      
+      <p:empty/>
     </p:variable>
 
     <p:identity>
@@ -272,7 +340,7 @@
        <code>&lt;c:resource</code> and <code>&lt;c:collection</code>s.  If failonerror is set to true, then the step fails if the resource does not 
       exist or cannot be deleted.  Otherwise, is returns a <code>&lt;c:result/></code> containing "Failure."</p>
   </p:documentation>
-  
+
   <p:declare-step type="ex:list" name="list-def">
     <p:output port="result" primary="true"/>
 
@@ -283,36 +351,36 @@
 
     <p:option name="resources" select="'true'"/>
     <p:option name="collections" select="'true'"/>
-    
+
     <p:load>
       <p:with-option name="href" select="$uri">
-        <p:empty />
+        <p:empty/>
       </p:with-option>
     </p:load>
-     
-    <p:unwrap match="exist:result" />
-  
-    <p:rename match="exist:collection" new-name="c:collection" />
-    <p:rename match="exist:resource" new-name="c:resource" />
-    
+
+    <p:unwrap match="exist:result"/>
+
+    <p:rename match="exist:collection" new-name="c:collection"/>
+    <p:rename match="exist:resource" new-name="c:resource"/>
+
     <p:choose>
       <p:when test="$resources = 'false'">
-        <p:delete match="c:resource" />
+        <p:delete match="c:resource"/>
       </p:when>
       <p:otherwise>
-        <p:identity />
+        <p:identity/>
       </p:otherwise>
     </p:choose>
-    
+
     <p:choose>
       <p:when test="$collections = 'false'">
-        <p:delete match="*/c:collection" />
+        <p:delete match="*/c:collection"/>
       </p:when>
       <p:otherwise>
-        <p:identity />
+        <p:identity/>
       </p:otherwise>
     </p:choose>
-    
+
   </p:declare-step>
 
 
