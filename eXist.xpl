@@ -18,71 +18,88 @@
   <p:import href="library-1.0.xpl"/>
 
 
-  <!-- TODO: Replace p:load with p:http-request so we can use authentication -->
-
+  <!-- TODO: add xml base attributes -->
   <p:declare-step type="ex:extract">
     <p:output port="result" sequence="true"/>
 
     <p:option name="uri" required="true"/>
-    <p:option name="resource" required="true"/>
-    <p:option name="user"/>
-    <p:option name="password"/>
-    <p:option name="failonerror" select="'false'"/>
-    
-    <p:load>
-      <p:with-option name="href" select="concat($uri, '/', $resource)">
-        <p:empty/>
-      </p:with-option>
-    </p:load>
-
-  </p:declare-step>
-
-
-  <!-- TODO: add xml base attributes -->
-  <p:declare-step type="ex:extract-collection">
-    <p:output port="result" sequence="true"/>
-
-    <p:option name="uri" required="true"/>
-    <p:option name="user"/>
-    <p:option name="password"/>
+    <p:option name="user" select="''"/>
+    <p:option name="password" select="''"/>
+    <p:option name="resource" select="''" />
     <p:option name="subcollections" select="'false'"/>
     <p:option name="failonerror" select="'false'"/>
 
-    <ex:list>
-      <p:with-option name="uri" select="$uri">
-        <p:empty/>
-      </p:with-option>
-      <p:with-option name="collections" select="$subcollections">
-        <p:empty/>
-      </p:with-option>
-    </ex:list>
-
-    <p:for-each>
-      <p:iteration-source select="/c:collection/*"/>
-      <p:output port="result" sequence="true"/>
-
-      <p:choose>
-        <p:when test="c:resource">
-          <cx:message>
-            <p:with-option name="message" select="concat('resource: ', $uri, '/', c:resource/@name)"
-            />
-          </cx:message>
-          <ex:extract>
-            <p:with-option name="uri" select="$uri"/>
-            <p:with-option name="resource" select="c:resource/@name"/>
-          </ex:extract>
-        </p:when>
-        <p:otherwise>
-          <cx:message>
-            <p:with-option name="message"
-              select="concat('collection: ', $uri, '/', c:collection/@name)"/>
-          </cx:message>
-          <ex:extract-collection subcollections="true">
-            <p:with-option name="uri" select="concat($uri, '/', c:collection/@name)"/>
-          </ex:extract-collection>
-        </p:otherwise>
-      </p:choose>
-    </p:for-each>
+    <!-- First, choose between extracting a single file, and looping through an entire collection -->
+    <p:choose>
+      <p:xpath-context>
+        <p:empty />
+      </p:xpath-context>
+      <p:when test="$resource != ''">
+        <wxp:smart-http-get>
+          <p:with-option name="uri" select="concat($uri, '/', $resource)" >
+            <p:empty />
+          </p:with-option>
+          <p:with-option name="password" select="$password">
+            <p:empty />
+          </p:with-option>
+          <p:with-option name="user" select="$user">
+            <p:empty />
+          </p:with-option>
+        </wxp:smart-http-get>
+      </p:when>
+      <p:otherwise>
+        
+        <!-- Use the list step to get all the items we need.  
+             Then loop through them and extract. 
+         -->
+        
+        <ex:list>
+          <p:with-option name="uri" select="$uri">
+            <p:empty/>
+          </p:with-option>
+          <p:with-option name="collections" select="$subcollections">
+            <p:empty/>
+          </p:with-option>
+          <p:with-option name="user" select="$user">
+            <p:empty />
+          </p:with-option>
+          <p:with-option name="password" select="$password">
+            <p:empty />
+          </p:with-option>
+        </ex:list>
+        
+        <p:for-each>
+          <p:iteration-source select="/c:collection/*"/>
+          <p:output port="result" sequence="true"/>
+          
+          <p:choose>
+            <p:when test="c:resource">
+              <cx:message>
+                <p:with-option name="message" select="concat('resource: ', $uri, '/', c:resource/@name)"
+                />
+              </cx:message>
+              <ex:extract>
+                <p:with-option name="uri" select="$uri"/>
+                <p:with-option name="resource" select="c:resource/@name"/>
+                <p:with-option name="user" select="$user" />
+                <p:with-option name="password" select="$password" />
+              </ex:extract>
+            </p:when>
+            <p:otherwise>
+              <cx:message>
+                <p:with-option name="message"
+                  select="concat('collection: ', $uri, '/', c:collection/@name)"/>
+              </cx:message>
+              <ex:extract subcollections="true">
+                <p:with-option name="uri" select="concat($uri, '/', c:collection/@name)"/>
+                <p:with-option name="user" select="$user" />
+                <p:with-option name="password" select="$password" />
+              </ex:extract>
+            </p:otherwise>
+          </p:choose>
+        </p:for-each>
+      </p:otherwise>
+    </p:choose>
 
   </p:declare-step>
 
@@ -171,7 +188,6 @@
     </p:variable>
 
     <!-- TODO: Check to make sure that one of collection or resource is defined -->
-    <!-- NOTE: Not sure why the following query requires xdb:login.  The create action does not. -->
 
     <p:identity name="initial-request">
       <p:input port="source">
@@ -226,9 +242,7 @@
       <p:with-option name="failonerror" select="$failonerror"/>
       <p:with-option name="return-string" select="concat($uri, '/', $resource, $collection)"/>
     </wxp:check-status>
-
-
-
+    
   </p:declare-step>
 
 
@@ -360,7 +374,6 @@
       </p:otherwise>
     </p:choose>
     
-    
   </p:declare-step>
   
 
@@ -380,23 +393,32 @@
     <p:output port="result" primary="true"/>
 
     <p:option name="uri"/>
+    <p:option name="user" select="''" />
+    <p:option name="password" select="''" />
     <p:option name="failonerror" select="'false'"/>
 
     <p:option name="resources" select="'true'"/>
     <p:option name="collections" select="'true'"/>
-
-    <p:load>
-      <p:with-option name="href" select="$uri">
-        <p:empty/>
+    
+    <wxp:smart-http-get>
+      <p:with-option name="uri" select="$uri" >
+        <p:empty />
       </p:with-option>
-    </p:load>
+      <p:with-option name="password" select="$password">
+        <p:empty />
+      </p:with-option>
+      <p:with-option name="user" select="$user">
+        <p:empty />
+      </p:with-option>
+    </wxp:smart-http-get>    
 
+    <p:filter select="//exist:result" />
     <p:unwrap match="exist:result"/>
 
     <p:rename match="exist:collection" new-name="c:collection"/>
     <p:rename match="exist:resource" new-name="c:resource"/>
 
-    <p:choose>
+     <p:choose>
       <p:when test="$resources = 'false'">
         <p:delete match="c:resource"/>
       </p:when>
@@ -421,6 +443,57 @@
   <!-- ================================= -->
   <!-- Utility Steps -->
   <!-- ================================= -->
+
+
+  <!-- Shorthand for a common http-get.  
+       Intelligently chooses whether to use authentication, based on 
+       the presence or absense of $user and $password.  
+       (That may not be actually necessary) -->
+  
+  <p:declare-step type="wxp:smart-http-get">
+    <p:output port="result" sequence="true" />
+    
+    <p:option name="uri" required="true"/>
+    <p:option name="user" select="''"/>
+    <p:option name="password" select="''"/>
+    
+    <p:identity name="initial-request">
+      <p:input port="source">
+        <p:inline>
+          <c:request method="get" detailed="true" />          
+        </p:inline>
+      </p:input>
+    </p:identity>
+    
+    <p:add-attribute attribute-name="href" match="/c:request">
+      <p:with-option name="attribute-value" select="$uri"  />
+    </p:add-attribute>
+    
+    <p:choose>
+      <!-- Catch invalid option definitions -->
+      <p:when test="($user != '' and $password = '') or ($user = '' and $password != '')">
+        <p:error code="invalid-options"/>
+      </p:when>      
+      <p:when test="$user != '' and $password != ''">
+        <p:add-attribute attribute-name="auth-method" match="/c:request" attribute-value="Basic" />
+        <p:add-attribute attribute-name="send-authorization" match="/c:request" attribute-value="true" />
+        <p:add-attribute attribute-name="username" match="/c:request">
+          <p:with-option name="attribute-value" select="$user"/>
+        </p:add-attribute>
+        <p:add-attribute attribute-name="password" match="/c:request">
+          <p:with-option name="attribute-value" select="$password"/>
+        </p:add-attribute>    
+      </p:when>
+      <p:otherwise>
+        <p:identity />
+      </p:otherwise>
+    </p:choose>
+    
+    <p:http-request />
+    
+  </p:declare-step>
+
+
 
   <!-- Utility step for resolving inline placeholding variables -->
   <p:declare-step type="wxp:resolve-placeholder">
