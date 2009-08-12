@@ -106,7 +106,6 @@
 
   <!-- TODO: Make this handle a sequence of documents -->
   <!-- TODO: Make it conditionally create collections -->
-  <!-- TODO: Make c:result contain the absolute uri on success -->
 
   <p:documentation xmlns="http://www.w3.org/1999/xhtml">
     <h3>ex:store</h3>
@@ -186,34 +185,41 @@
     <p:variable name="path" select="replace(substring-after($uri, 'rest/'), '/$', '')">
       <p:empty/>
     </p:variable>
-
-    <!-- TODO: Check to make sure that one of collection or resource is defined -->
+    
+    <!-- Create a uri without the trailing slash -->
+    <p:variable name="clean-uri" select="replace($uri, '(.*)/$', '$1')" >
+      <p:empty />
+    </p:variable>
 
     <p:identity name="initial-request">
       <p:input port="source">
-        <p:inline>
-          <c:request method="post" auth-method="Basic" send-authorization="true" detailed="true"
-            username="${user}" password="${password}" href="${uri}">
-            <c:body content-type="text/xml">
-              <query xmlns="http://exist.sourceforge.net/NS/exist" start="1" max="20" cache="no">
-                <text> import module namespace xdb="http://exist-db.org/xquery/xmldb"; 
-                       let $server := "xmldb:exist:///db" 
-                       let $user := "${user}" let $pass := "${password}" 
-                       let $resource := "${resource}" 
-                       let $collection := "${collection}" 
-                       let $login := xdb:login($server, $user, $pass) 
-                       let $response := if ($resource != '' and $collection = '') 
-                       then xdb:remove("/${path}/", "${resource}") 
-                       else if ($collection != '') 
-                            then xdb:remove("/${path}/${collection}") 
-                            else () return $response 
-                </text>
-              </query>
-            </c:body>
-          </c:request>
+        <p:inline>         
+           <c:query xmlns="http://exist.sourceforge.net/NS/exist" start="1" max="20" cache="no">
+             <c:text> 
+               let $resource := "${resource}" 
+               let $collection := "${collection}" 
+               let $login := xmldb:login("xmldb:exist:///db", "${user}", "${password}") 
+               let $response := if ($resource != '' and $collection = '') 
+                                   then xmldb:remove("/${path}/", "${resource}") 
+                                   else if ($collection != '') 
+                                           then xmldb:remove("/${path}/${collection}") 
+                                           else () 
+               return $response                         
+             </c:text>
+           </c:query>            
         </p:inline>
       </p:input>
     </p:identity>
+
+    <!-- Abort step if wrong options specified -->
+    <p:choose>
+      <p:when test="($collection = '' and $resource = '') or ($collection != '' and $resource != '')">
+        <p:error code="invalid-options"/>
+      </p:when>
+      <p:otherwise>
+        <p:identity />
+      </p:otherwise>
+    </p:choose>
 
     <!-- Fill in the needed parameters -->
     <!-- NOTE: Or maybe even a generic construct-request that can take the specific function you want to complete as a parameter -->
@@ -222,10 +228,7 @@
     </wxp:resolve-placeholder>
     <wxp:resolve-placeholder placeholder="password">
       <p:with-option name="value" select="$password"/>
-    </wxp:resolve-placeholder>
-    <wxp:resolve-placeholder placeholder="uri">
-      <p:with-option name="value" select="$uri"/>
-    </wxp:resolve-placeholder>
+    </wxp:resolve-placeholder>  
     <wxp:resolve-placeholder placeholder="path">
       <p:with-option name="value" select="$path"/>
     </wxp:resolve-placeholder>
@@ -236,11 +239,15 @@
       <p:with-option name="value" select="$collection"/>
     </wxp:resolve-placeholder>
 
-    <wxp:safe-http-request/>
+    <ex:xquery>
+      <p:with-option name="user" select="$user"/>
+      <p:with-option name="password" select="$password"/>
+      <p:with-option name="uri" select="$clean-uri"/>
+    </ex:xquery>
 
     <wxp:check-status success-status="200">
       <p:with-option name="failonerror" select="$failonerror"/>
-      <p:with-option name="return-string" select="concat($uri, '/', $resource, $collection)"/>
+      <p:with-option name="return-string" select="concat($clean-uri, '/', $resource, $collection)"/>
     </wxp:check-status>
     
   </p:declare-step>
@@ -255,6 +262,7 @@
 
   <!-- TODO: handle sequence of documents? -->
   <!-- TODO: check result wrapper element -->
+  <!-- TODO: Make authentication optional? -->
 
   <p:declare-step type="ex:xquery" name="xquery-def">
     <p:input port="source" primary="true"/>
