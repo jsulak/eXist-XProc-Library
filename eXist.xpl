@@ -10,12 +10,15 @@
       <h2>Version 0.1</h2>
       <p>The steps defined in this library are implemented using the eXist REST interface.</p>
       <p>Contact: James Sulak</p>
-      <p>Public repository:  http://bitbucket.org/jasulak/exist-xproc-library/</p>
+      <p>Public repository: http://bitbucket.org/jasulak/exist-xproc-library/</p>
     </div>
   </p:documentation>
 
 
   <p:import href="library-1.0.xpl"/>
+
+
+  <!-- TODO: Replace p:load with p:http-request so we can use authentication -->
 
   <p:declare-step type="ex:extract">
     <p:output port="result" sequence="true"/>
@@ -25,7 +28,7 @@
     <p:option name="user"/>
     <p:option name="password"/>
     <p:option name="failonerror" select="'false'"/>
-
+    
     <p:load>
       <p:with-option name="href" select="concat($uri, '/', $resource)">
         <p:empty/>
@@ -61,7 +64,8 @@
       <p:choose>
         <p:when test="c:resource">
           <cx:message>
-            <p:with-option name="message" select="concat('resource: ', $uri, '/', c:resource/@name)"/>
+            <p:with-option name="message" select="concat('resource: ', $uri, '/', c:resource/@name)"
+            />
           </cx:message>
           <ex:extract>
             <p:with-option name="uri" select="$uri"/>
@@ -70,14 +74,14 @@
         </p:when>
         <p:otherwise>
           <cx:message>
-            <p:with-option name="message" select="concat('collection: ', $uri, '/', c:collection/@name)"/>
+            <p:with-option name="message"
+              select="concat('collection: ', $uri, '/', c:collection/@name)"/>
           </cx:message>
           <ex:extract-collection subcollections="true">
             <p:with-option name="uri" select="concat($uri, '/', c:collection/@name)"/>
           </ex:extract-collection>
         </p:otherwise>
       </p:choose>
-
     </p:for-each>
 
   </p:declare-step>
@@ -89,11 +93,11 @@
 
   <p:documentation xmlns="http://www.w3.org/1999/xhtml">
     <h3>ex:store</h3>
-    <p>The <code>ex:store</code> step stores the document provided on the input port in an eXist database in the location provided by
-       The <code>uri</code> option.</p>
-    <p>It returns a <code>&lt;c:result/></code> containing the absolute URI of the stored file.  
-      If failonerror is set to true, then the step fails if the resource cannot be stored.  Otherwise, is returns a 
-      <code>&lt;c:result/></code> containing "Failure."</p>
+    <p>The <code>ex:store</code> step stores the document provided on the input port in an eXist
+      database in the location provided by The <code>uri</code> option.</p>
+    <p>It returns a <code>&lt;c:result/></code> containing the absolute URI of the stored file.
+      If failonerror is set to true, then the step fails if the resource cannot be stored.
+      Otherwise, is returns a <code>&lt;c:result/></code> containing "Failure."</p>
   </p:documentation>
 
   <p:declare-step type="ex:store" name="store-def">
@@ -124,7 +128,8 @@
     <p:set-attributes match="c:request">
       <p:input port="attributes">
         <p:inline>
-          <c:request method="put" auth-method="Basic" send-authorization="true" detailed="true" status-only="true"/>
+          <c:request method="put" auth-method="Basic" send-authorization="true" detailed="true"
+            status-only="true"/>
         </p:inline>
       </p:input>
     </p:set-attributes>
@@ -133,6 +138,7 @@
 
     <wxp:check-status success-status="201">
       <p:with-option name="failonerror" select="$failonerror"/>
+      <p:with-option name="return-string" select="concat($uri, '/', $resource)"/>
     </wxp:check-status>
 
   </p:declare-step>
@@ -141,14 +147,14 @@
 
   <p:documentation xmlns="http://www.w3.org/1999/xhtml">
     <h3>ex:remove</h3>
-    <p>The <code>ex:remove</code> step removes a single resource or collection from the collection specified in the <code>uri</code> option.</p>
-    <p>It returns a <code>&lt;c:result/></code> containing the absolute URI of the deleted file.  
-      If failonerror is set to true, then the step fails if the resource does not exist or cannot be deleted.  Otherwise, is returns a 
-      <code>&lt;c:result/></code> containing "Failure."</p>
+    <p>The <code>ex:remove</code> step removes a single resource or collection from the collection
+      specified in the <code>uri</code> option.</p>
+    <p>It returns a <code>&lt;c:result/></code> containing the absolute URI of the deleted file.
+      If failonerror is set to true, then the step fails if the resource does not exist or cannot be
+      deleted. Otherwise, is returns a <code>&lt;c:result/></code> containing "Failure."</p>
   </p:documentation>
 
   <!-- TODO: Replace POST request with DELETE request once it works in Calabash. -->
-  <!-- TODO: Make the c:result contain the actual uri of the deleted file -->
 
   <p:declare-step type="ex:remove" name="remove-def">
     <p:output port="result" primary="true"/>
@@ -164,30 +170,27 @@
       <p:empty/>
     </p:variable>
 
-
     <!-- TODO: Check to make sure that one of collection or resource is defined -->
     <!-- NOTE: Not sure why the following query requires xdb:login.  The create action does not. -->
 
-    <p:identity>
+    <p:identity name="initial-request">
       <p:input port="source">
         <p:inline>
-          <c:request method="post" auth-method="Basic" send-authorization="true" detailed="true" username="${user}"
-            password="${password}" href="${uri}">
+          <c:request method="post" auth-method="Basic" send-authorization="true" detailed="true"
+            username="${user}" password="${password}" href="${uri}">
             <c:body content-type="text/xml">
               <query xmlns="http://exist.sourceforge.net/NS/exist" start="1" max="20" cache="no">
-                <text>
-                  import module namespace xdb="http://exist-db.org/xquery/xmldb";
-                  let $server := "xmldb:exist:///db"
-                  let $user := "${user}"
-                  let $pass := "${password}"
-                  let $resource := "${resource}"
-                  let $collection := "${collection}"
-                  
-                  let $login := xdb:login($server, $user, $pass)                      
-                  let $response := if ($resource != '') 
-                  then xdb:remove("/${path}/", "${resource}")
-                  else xdb:remove("/${path}/${collection}")
-                  return $response
+                <text> import module namespace xdb="http://exist-db.org/xquery/xmldb"; 
+                       let $server := "xmldb:exist:///db" 
+                       let $user := "${user}" let $pass := "${password}" 
+                       let $resource := "${resource}" 
+                       let $collection := "${collection}" 
+                       let $login := xdb:login($server, $user, $pass) 
+                       let $response := if ($resource != '' and $collection = '') 
+                       then xdb:remove("/${path}/", "${resource}") 
+                       else if ($collection != '') 
+                            then xdb:remove("/${path}/${collection}") 
+                            else () return $response 
                 </text>
               </query>
             </c:body>
@@ -221,7 +224,9 @@
 
     <wxp:check-status success-status="200">
       <p:with-option name="failonerror" select="$failonerror"/>
+      <p:with-option name="return-string" select="concat($uri, '/', $resource, $collection)"/>
     </wxp:check-status>
+
 
 
   </p:declare-step>
@@ -230,7 +235,8 @@
   <p:documentation xmlns="http://www.w3.org/1999/xhtml">
     <h3>ex:xquery</h3>
     <p>The <code>ex:xquery</code> step executes an XQuery expression.</p>
-    <p>It expects the query to be wrapped in a <code>&lt;c:query></code>.  It returns the result of the expression in a <code>&lt;c:result></code>.</p>
+    <p>It expects the query to be wrapped in a <code>&lt;c:query></code>. It returns the result
+      of the expression in a <code>&lt;c:result></code>.</p>
   </p:documentation>
 
   <!-- TODO: handle sequence of documents? -->
@@ -246,7 +252,8 @@
     <p:option name="failonerror" select="'false'"/>
 
     <!-- Change the xproc document namespace to the exist namespace -->
-    <p:namespace-rename from="http://www.w3.org/ns/xproc-step" to="http://exist.sourceforge.net/NS/exist" name="rename"/>
+    <p:namespace-rename from="http://www.w3.org/ns/xproc-step"
+      to="http://exist.sourceforge.net/NS/exist" name="rename"/>
 
     <!-- Insert actual query -->
     <p:replace match="exist:query">
@@ -282,71 +289,97 @@
   <p:documentation xmlns="http://www.w3.org/1999/xhtml">
     <h3>ex:create</h3>
     <p>The <code>ex:create</code> step creates a single empty collection.  The name is specified in the <code>collection option</code>, and its 
-       location is specitied in the <code>uri</code> option.</p>
+      location is specitied in the <code>uri</code> option.</p>
     <p>It returns a <code>&lt;c:result/></code> containing the absolute URI of the created collection.  
       If failonerror is set to true, then the step fails if the collection cannot be created.  Otherwise, is returns a 
       <code>&lt;c:result/></code> containing "Failure."</p>
   </p:documentation>
-
+  
   <p:declare-step type="ex:create" name="create-def">
-    <p:output port="result" primary="true"/>
-
+    <p:output port="result" primary="true" sequence="true"/>
+    
     <p:option name="uri" required="true"/>
     <p:option name="user" required="true"/>
     <p:option name="password" required="true"/>
     <p:option name="failonerror" select="'false'"/>
     <p:option name="collection" required="true"/>
-
+    
     <p:variable name="parent-collection" select="replace($uri, '.*(/db.*)$', '$1')">
       <p:empty/>
     </p:variable>
-
+    <p:variable name="base-uri" select="replace($uri, '^(.*)/db/?.*$', '$1')">
+      <p:empty />
+    </p:variable>
+    
+    <!-- Create a uri without the trailing slash -->
+    <p:variable name="clean-uri" select="replace($uri, '(.*)/$', '$1')" >
+      <p:empty />
+    </p:variable>
+    
     <p:identity>
       <p:input port="source">
         <p:inline>
           <c:query xmlns="http://exist.sourceforge.net/NS/exist" start="1" max="20" cache="no">
             <c:text>
-                  import module namespace xdb="http://exist-db.org/xquery/xmldb";               
-                  let $parent-collection := "${parent-collection}"
-                  let $collection := "${collection}"                                               
-                  let $response := xdb:create-collection($parent-collection, $collection)
-                  return $response
+              import module namespace xdb="http://exist-db.org/xquery/xmldb";   
+              declare namespace c="http://www.w3.org/ns/xproc-step";
+              let $login := xdb:login("xmldb:exist:///db", "${user}", "${password}") 
+              let $response := xdb:create-collection("${parent-collection}", "${collection}")
+              return (element c:result { concat(request:get-url(), $response) })
             </c:text>
           </c:query>
         </p:inline>
       </p:input>
     </p:identity>
-
+    
+    <wxp:resolve-placeholder placeholder="user">
+      <p:with-option name="value" select="$user"/>
+    </wxp:resolve-placeholder>
+    <wxp:resolve-placeholder placeholder="password">
+      <p:with-option name="value" select="$password"/>
+    </wxp:resolve-placeholder>
     <wxp:resolve-placeholder placeholder="parent-collection">
       <p:with-option name="value" select="$parent-collection"/>
     </wxp:resolve-placeholder>
     <wxp:resolve-placeholder placeholder="collection">
       <p:with-option name="value" select="$collection"/>
     </wxp:resolve-placeholder>
-
+    
     <ex:xquery>
       <p:with-option name="user" select="$user"/>
       <p:with-option name="password" select="$password"/>
-      <p:with-option name="uri" select="$uri"/>
+      <p:with-option name="uri" select="$base-uri"/>
     </ex:xquery>
-
+    
+    <p:choose>
+      <p:when test="//c:result = concat($clean-uri, '/', $collection)">
+        <p:filter select="//c:result" />
+      </p:when>
+      <p:otherwise>
+        <p:error code="creation-failed" />        
+      </p:otherwise>
+    </p:choose>
+    
+    
   </p:declare-step>
+  
 
 
   <p:documentation xmlns="http://www.w3.org/1999/xhtml">
     <h3>ex:list</h3>
-    <p>The <code>ex:list</code> step returns a list of the resources and/or collections contained in the collection specified in the <code>uri</code> option.</p>
-    <p>It's behavior is modeled after <code>&lt;p:directory-list</code>.  It returns a <code>&lt;c:collection></code> containing a sequence of 
-       <code>&lt;c:resource</code> and <code>&lt;c:collection</code>s.  If failonerror is set to true, then the step fails if the resource does not 
-      exist or cannot be deleted.  Otherwise, is returns a <code>&lt;c:result/></code> containing "Failure."</p>
+    <p>The <code>ex:list</code> step returns a list of the resources and/or collections contained in
+      the collection specified in the <code>uri</code> option.</p>
+    <p>It's behavior is modeled after <code>&lt;p:directory-list</code>. It returns a
+        <code>&lt;c:collection></code> containing a sequence of <code>&lt;c:resource</code>
+      and <code>&lt;c:collection</code>s. If failonerror is set to true, then the step fails if
+      the resource does not exist or cannot be deleted. Otherwise, is returns a
+        <code>&lt;c:result/></code> containing "Failure."</p>
   </p:documentation>
 
   <p:declare-step type="ex:list" name="list-def">
     <p:output port="result" primary="true"/>
 
     <p:option name="uri"/>
-    <p:option name="user"/>
-    <p:option name="password"/>
     <p:option name="failonerror" select="'false'"/>
 
     <p:option name="resources" select="'true'"/>
@@ -398,7 +431,8 @@
 
     <p:string-replace match="text() | attribute()">
       <p:with-option name="replace"
-        select="concat('replace(., &quot;\$\{', $placeholder, '\}&quot;,&quot;', $value, '&quot;)')"/>
+        select="concat('replace(., &quot;\$\{', $placeholder, '\}&quot;,&quot;', $value, '&quot;)')"
+      />
     </p:string-replace>
   </p:declare-step>
 
@@ -432,18 +466,20 @@
     <p:output port="result"/>
 
     <p:option name="success-status" required="true"/>
+    <p:option name="return-string" select="'Success'"/>
     <p:option name="failonerror" required="true"/>
 
     <p:choose name="determine-result">
       <!-- First, check if it worked -->
       <p:when test="/c:response/@status = $success-status">
-        <p:identity>
+        <p:string-replace match="c:result/text()">
+          <p:with-option name="replace" select="concat('&quot;', $return-string, '&quot;')"/>
           <p:input port="source">
             <p:inline>
-              <c:result>Success</c:result>
+              <c:result>REPLACE</c:result>
             </p:inline>
           </p:input>
-        </p:identity>
+        </p:string-replace>
       </p:when>
       <!-- If not, then determine if we need to fail loudly or quietly -->
       <p:otherwise>
@@ -467,6 +503,8 @@
         </p:choose>
       </p:otherwise>
     </p:choose>
+
+
   </p:declare-step>
 
 
