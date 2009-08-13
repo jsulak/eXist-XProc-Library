@@ -164,7 +164,7 @@
       </p:input>
     </p:set-attributes>
 
-    <wxp:safe-http-request/>
+    <p:http-request/>
 
     <wxp:check-status success-status="201">
       <p:with-option name="failonerror" select="'true'"/>
@@ -314,7 +314,7 @@
       <p:with-option name="attribute-value" select="$uri"/>
     </p:add-attribute>
 
-    <wxp:safe-http-request/>
+    <p:http-request/>
 
   </p:declare-step>
 
@@ -526,29 +526,6 @@
         select="concat('replace(., &quot;\$\{', $placeholder, '\}&quot;,&quot;', $value, '&quot;)')"
       />
     </p:string-replace>
-  </p:declare-step>
-
-
-  <!-- TODO:  Make the failure messages actually valid -->
-
-  <p:declare-step type="wxp:safe-http-request">
-    <p:input port="source"/>
-    <p:output port="result"/>
-
-    <p:try name="request-block">
-      <p:group>
-        <p:http-request name="request"/>
-      </p:group>
-      <p:catch>
-        <p:identity>
-          <p:input port="source">
-            <p:inline>
-              <c:result>Fail: No response from server</c:result>
-            </p:inline>
-          </p:input>
-        </p:identity>
-      </p:catch>
-    </p:try>
   </p:declare-step>
 
 
