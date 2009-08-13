@@ -18,6 +18,17 @@
   <p:import href="library-1.0.xpl"/>
 
 
+  <p:documentation xmlns="http://www.w3.org/1999/xhtml">
+    <h3>ex:extract</h3>
+    <p>The <code>ex:extract</code> step extracts resources from an eXist database.  
+       If <code>resource</code> is specified, then it extracts a single resource from
+       the collection specified by the <code>uri</code> option.  If <code>resource</code> is not specified,
+       then it extracts all the resources contained in the collection specified by <code>uri</code>.
+       If <code>subcollections</code> is set to 'true', then it recurses through all the subcollections 
+       and extracts those resources as well.</p>
+    <p>The step fails if the resource is inaccessible or does not exist.</p>
+  </p:documentation>
+
   <!-- TODO: add xml base attributes -->
   <p:declare-step type="ex:extract">
     <p:output port="result" sequence="true"/>
@@ -27,8 +38,7 @@
     <p:option name="password" select="''"/>
     <p:option name="resource" select="''" />
     <p:option name="subcollections" select="'false'"/>
-    <p:option name="failonerror" select="'false'"/>
-
+    
     <!-- First, choose between extracting a single file, and looping through an entire collection -->
     <p:choose>
       <p:xpath-context>
@@ -110,10 +120,9 @@
   <p:documentation xmlns="http://www.w3.org/1999/xhtml">
     <h3>ex:store</h3>
     <p>The <code>ex:store</code> step stores the document provided on the input port in an eXist
-      database in the location provided by The <code>uri</code> option.</p>
+      database in the location provided by the <code>uri</code> option.</p>
     <p>It returns a <code>&lt;c:result/></code> containing the absolute URI of the stored file.
-      If failonerror is set to true, then the step fails if the resource cannot be stored.
-      Otherwise, is returns a <code>&lt;c:result/></code> containing "Failure."</p>
+       The step fails if the resource cannot be stored.</p>
   </p:documentation>
 
   <p:declare-step type="ex:store" name="store-def">
@@ -124,7 +133,6 @@
     <p:option name="resource" required="true"/>
     <p:option name="user" required="true"/>
     <p:option name="password" required="true"/>
-    <p:option name="failonerror" select="'false'"/>
 
     <p:wrap wrapper="c:body" match="/"/>
     <p:add-attribute attribute-name="content-type" attribute-value="text/xml" match="/c:body"/>
@@ -153,7 +161,7 @@
     <wxp:safe-http-request/>
 
     <wxp:check-status success-status="201">
-      <p:with-option name="failonerror" select="$failonerror"/>
+      <p:with-option name="failonerror" select="'true'"/>
       <p:with-option name="return-string" select="concat($uri, '/', $resource)"/>
     </wxp:check-status>
 
@@ -166,8 +174,7 @@
     <p>The <code>ex:remove</code> step removes a single resource or collection from the collection
       specified in the <code>uri</code> option.</p>
     <p>It returns a <code>&lt;c:result/></code> containing the absolute URI of the deleted file.
-      If failonerror is set to true, then the step fails if the resource does not exist or cannot be
-      deleted. Otherwise, is returns a <code>&lt;c:result/></code> containing "Failure."</p>
+       The step fails if the resource does not exist or cannot be deleted. </p>
   </p:documentation>
 
   <!-- TODO: Replace POST request with DELETE request once it works in Calabash. -->
@@ -179,8 +186,7 @@
     <p:option name="collection" select="''"/>
     <p:option name="resource" select="''"/>
     <p:option name="user"/>
-    <p:option name="password"/>
-    <p:option name="failonerror" select="'false'"/>
+    <p:option name="password"/>    
 
     <p:variable name="path" select="replace(substring-after($uri, 'rest/'), '/$', '')">
       <p:empty/>
@@ -246,7 +252,7 @@
     </ex:xquery>
 
     <wxp:check-status success-status="200">
-      <p:with-option name="failonerror" select="$failonerror"/>
+      <p:with-option name="failonerror" select="'true'"/>
       <p:with-option name="return-string" select="concat($clean-uri, '/', $resource, $collection)"/>
     </wxp:check-status>
     
@@ -271,7 +277,6 @@
     <p:option name="uri" required="true"/>
     <p:option name="user" required="true"/>
     <p:option name="password" required="true"/>
-    <p:option name="failonerror" select="'false'"/>
 
     <!-- Change the xproc document namespace to the exist namespace -->
     <p:namespace-rename from="http://www.w3.org/ns/xproc-step"
@@ -311,10 +316,9 @@
   <p:documentation xmlns="http://www.w3.org/1999/xhtml">
     <h3>ex:create</h3>
     <p>The <code>ex:create</code> step creates a single empty collection.  The name is specified in the <code>collection option</code>, and its 
-      location is specitied in the <code>uri</code> option.</p>
+      location is specified in the <code>uri</code> option.</p>
     <p>It returns a <code>&lt;c:result/></code> containing the absolute URI of the created collection.  
-      If failonerror is set to true, then the step fails if the collection cannot be created.  Otherwise, is returns a 
-      <code>&lt;c:result/></code> containing "Failure."</p>
+      The step fails if the collection cannot be created.</p>
   </p:documentation>
   
   <p:declare-step type="ex:create" name="create-def">
@@ -322,8 +326,7 @@
     
     <p:option name="uri" required="true"/>
     <p:option name="user" required="true"/>
-    <p:option name="password" required="true"/>
-    <p:option name="failonerror" select="'false'"/>
+    <p:option name="password" required="true"/>    
     <p:option name="collection" required="true"/>
     
     <p:variable name="parent-collection" select="replace($uri, '.*(/db.*)$', '$1')">
@@ -392,9 +395,7 @@
       the collection specified in the <code>uri</code> option.</p>
     <p>It's behavior is modeled after <code>&lt;p:directory-list</code>. It returns a
         <code>&lt;c:collection></code> containing a sequence of <code>&lt;c:resource</code>
-      and <code>&lt;c:collection</code>s. If failonerror is set to true, then the step fails if
-      the resource does not exist or cannot be deleted. Otherwise, is returns a
-        <code>&lt;c:result/></code> containing "Failure."</p>
+      and <code>&lt;c:collection</code>s. The step fails if the resource does not exist or cannot be deleted.</p>
   </p:documentation>
 
   <p:declare-step type="ex:list" name="list-def">
@@ -403,8 +404,7 @@
     <p:option name="uri"/>
     <p:option name="user" select="''" />
     <p:option name="password" select="''" />
-    <p:option name="failonerror" select="'false'"/>
-
+    
     <p:option name="resources" select="'true'"/>
     <p:option name="collections" select="'true'"/>
     
