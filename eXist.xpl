@@ -39,6 +39,11 @@
     <p:option name="resource" select="''" />
     <p:option name="subcollections" select="'false'"/>
     
+    <!-- Create a uri without the trailing slash -->
+    <p:variable name="clean-uri" select="replace($uri, '(.*)/$', '$1')" >
+      <p:empty />
+    </p:variable>
+    
     <!-- First, choose between extracting a single file, and looping through an entire collection -->
     <p:choose>
       <p:xpath-context>
@@ -46,7 +51,7 @@
       </p:xpath-context>
       <p:when test="$resource != ''">
         <wxp:smart-http-get>
-          <p:with-option name="uri" select="concat($uri, '/', $resource)" >
+          <p:with-option name="uri" select="concat($clean-uri, '/', $resource)" >
             <p:empty />
           </p:with-option>
           <p:with-option name="password" select="$password">
@@ -56,6 +61,9 @@
             <p:empty />
           </p:with-option>
         </wxp:smart-http-get>
+        
+        <p:add-xml-base />          
+      
       </p:when>
       <p:otherwise>
         
@@ -64,7 +72,7 @@
          -->
         
         <ex:list>
-          <p:with-option name="uri" select="$uri">
+          <p:with-option name="uri" select="$clean-uri">
             <p:empty/>
           </p:with-option>
           <p:with-option name="collections" select="$subcollections">
@@ -85,11 +93,11 @@
           <p:choose>
             <p:when test="c:resource">
               <cx:message>
-                <p:with-option name="message" select="concat('resource: ', $uri, '/', c:resource/@name)"
+                <p:with-option name="message" select="concat('resource: ', $clean-uri, '/', c:resource/@name)"
                 />
               </cx:message>
               <ex:extract>
-                <p:with-option name="uri" select="$uri"/>
+                <p:with-option name="uri" select="$clean-uri"/>
                 <p:with-option name="resource" select="c:resource/@name"/>
                 <p:with-option name="user" select="$user" />
                 <p:with-option name="password" select="$password" />
@@ -98,10 +106,10 @@
             <p:otherwise>
               <cx:message>
                 <p:with-option name="message"
-                  select="concat('collection: ', $uri, '/', c:collection/@name)"/>
+                  select="concat('collection: ', $clean-uri, '/', c:collection/@name)"/>
               </cx:message>
               <ex:extract subcollections="true">
-                <p:with-option name="uri" select="concat($uri, '/', c:collection/@name)"/>
+                <p:with-option name="uri" select="concat($clean-uri, '/', c:collection/@name)"/>
                 <p:with-option name="user" select="$user" />
                 <p:with-option name="password" select="$password" />
               </ex:extract>
@@ -134,6 +142,9 @@
     <p:option name="user" required="true"/>
     <p:option name="password" required="true"/>
 
+    <!-- Create a uri without the trailing slash -->
+    <p:variable name="clean-uri" select="replace($uri, '(.*)/$', '$1')" />    
+
     <p:wrap wrapper="c:body" match="/"/>
     <p:add-attribute attribute-name="content-type" attribute-value="text/xml" match="/c:body"/>
 
@@ -147,7 +158,7 @@
     </p:add-attribute>
     <!-- TODO:  Error checking to make sure that the slash, etc. actually work out -->
     <p:add-attribute attribute-name="href" match="/c:request">
-      <p:with-option name="attribute-value" select="concat($uri, '/', $resource)"/>
+      <p:with-option name="attribute-value" select="concat($clean-uri, '/', $resource)"/>
     </p:add-attribute>
     <p:set-attributes match="c:request">
       <p:input port="attributes">
@@ -162,7 +173,7 @@
 
     <wxp:check-status success-status="201">
       <p:with-option name="failonerror" select="'true'"/>
-      <p:with-option name="return-string" select="concat($uri, '/', $resource)"/>
+      <p:with-option name="return-string" select="concat($clean-uri, '/', $resource)"/>
     </wxp:check-status>
 
   </p:declare-step>
@@ -408,8 +419,13 @@
     <p:option name="resources" select="'true'"/>
     <p:option name="collections" select="'true'"/>
     
+    <!-- Create a uri without the trailing slash -->
+    <p:variable name="clean-uri" select="replace($uri, '(.*)/$', '$1')" >
+      <p:empty />
+    </p:variable>
+    
     <wxp:smart-http-get>
-      <p:with-option name="uri" select="$uri" >
+      <p:with-option name="uri" select="$clean-uri" >
         <p:empty />
       </p:with-option>
       <p:with-option name="password" select="$password">
