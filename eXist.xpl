@@ -29,7 +29,6 @@
     <p>The step fails if the resource is inaccessible or does not exist.</p>
   </p:documentation>
 
-  <!-- TODO: add xml base attributes -->
   <p:declare-step type="ex:extract">
     <p:output port="result" sequence="true"/>
 
@@ -60,10 +59,8 @@
           <p:with-option name="user" select="$user">
             <p:empty />
           </p:with-option>
-        </wxp:smart-http-get>
-        
+        </wxp:smart-http-get>        
         <p:add-xml-base />          
-      
       </p:when>
       <p:otherwise>
         
@@ -122,7 +119,6 @@
   </p:declare-step>
 
 
-  <!-- TODO: Make this handle a sequence of documents -->
   <!-- TODO: Make it conditionally create collections -->
 
   <p:documentation xmlns="http://www.w3.org/1999/xhtml">
@@ -156,7 +152,6 @@
     <p:add-attribute attribute-name="password" match="/c:request">
       <p:with-option name="attribute-value" select="$password"/>
     </p:add-attribute>
-    <!-- TODO:  Error checking to make sure that the slash, etc. actually work out -->
     <p:add-attribute attribute-name="href" match="/c:request">
       <p:with-option name="attribute-value" select="concat($clean-uri, '/', $resource)"/>
     </p:add-attribute>
