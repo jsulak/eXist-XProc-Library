@@ -20,6 +20,96 @@
 
 
   <p:documentation xmlns="http://www.w3.org/1999/xhtml">
+    <h3>ex:copy</h3>
+    <p>The <code>ex:copy</code> step copies a resource or collection to a new destination.</p>
+    <p>It returns a <code>&lt;c:result/></code> containing the absolute URI of the target.</p>
+  </p:documentation>
+  
+  <p:declare-step type="ex:copy">
+    <p:output port="result" primary="true"/>
+    
+    <p:option name="uri"/>
+    <p:option name="collection" select="''"/>
+    <p:option name="resource" select="''"/>
+    <p:option name="target" required="true" />
+    <p:option name="user"/>
+    <p:option name="password"/>   
+    
+    <!-- Create a uri without the trailing slash -->
+    <p:variable name="clean-uri" select="replace($uri, '(.*)/$', '$1')" >
+      <p:empty />
+    </p:variable>
+    <p:variable name="base-uri" select="replace($uri, '^(.*)/db/?.*$', '$1')">
+      <p:empty />
+    </p:variable>
+    <p:variable name="parent-collection" select="replace($uri, '.*(/db.*)$', '$1')">
+      <p:empty/>
+    </p:variable>
+    
+    <p:identity name="initial-request">
+      <p:input port="source">
+        <p:inline>         
+          <c:query xmlns="http://exist.sourceforge.net/NS/exist" start="1" max="20" cache="no">
+            <c:text> 
+              declare namespace c="http://www.w3.org/ns/xproc-step";
+              let $resource := "${resource}"
+              let $collection := "${collection}"
+              let $login := xmldb:login("xmldb:exist:///db", "${user}", "${password}")              
+              let $response := if ($resource != '')
+                               then xmldb:copy("${parent-collection}", "${target}", "${resource}")
+                               else xmldb:copy("${parent-collection}/${collection}", "${target}")
+              return (element c:result { concat(request:get-url(), "${target}/${resource}${collection}") }) 
+            </c:text>
+          </c:query>
+        </p:inline>
+      </p:input>
+    </p:identity>
+    
+    
+    <!-- Abort step if wrong options specified -->
+    <p:choose>
+      <p:when test="($collection = '' and $resource = '') or ($collection != '' and $resource != '')">
+        <p:error code="invalid-options"/>
+      </p:when>
+      <p:otherwise>
+        <p:identity />
+      </p:otherwise>
+    </p:choose>
+    
+    <wxp:resolve-placeholders>
+      <p:input port="parameters">
+        <p:empty />
+      </p:input>
+      <p:with-param name="user" select="$user" />
+      <p:with-param name="password" select="$password" />
+      <p:with-param name="parent-collection" select="$parent-collection" />
+      <p:with-param name="target" select="$target" />
+      <p:with-param name="resource" select="$resource" />
+      <p:with-param name="collection" select="$collection" />
+    </wxp:resolve-placeholders>
+    
+    <cx:message>
+      <p:with-option name="message" select="concat($base-uri, $target, '/', $resource)" />
+    </cx:message>
+    <cx:message>
+      <p:with-option name="message" select="$base-uri" />
+    </cx:message>
+    
+    <ex:xquery>
+      <p:with-option name="user" select="$user"/>
+      <p:with-option name="password" select="$password"/>
+      <p:with-option name="uri" select="$base-uri"/>
+    </ex:xquery>
+    
+    <p:filter select="//c:result" />
+    
+  </p:declare-step>
+  
+  
+  
+
+
+  <p:documentation xmlns="http://www.w3.org/1999/xhtml">
     <h3>ex:extract</h3>
     <p>The <code>ex:extract</code> step extracts resources from an eXist database.  
        If <code>resource</code> is specified, then it extracts a single resource from
@@ -90,6 +180,7 @@
           
           <p:choose>
             <p:when test="c:resource">
+              <!-- TODO: remove messages -->
               <cx:message>
                 <p:with-option name="message" select="concat('resource: ', $clean-uri, '/', c:resource/@name)"
                 />
@@ -344,11 +435,10 @@
       <p:input port="source">
         <p:inline>
           <c:query xmlns="http://exist.sourceforge.net/NS/exist" start="1" max="20" cache="no">
-            <c:text>
-              import module namespace xdb="http://exist-db.org/xquery/xmldb";   
+            <c:text>   
               declare namespace c="http://www.w3.org/ns/xproc-step";
-              let $login := xdb:login("xmldb:exist:///db", "${user}", "${password}") 
-              let $response := xdb:create-collection("${parent-collection}", "${collection}")
+              let $login := xmldb:login("xmldb:exist:///db", "${user}", "${password}") 
+              let $response := xmldb:create-collection("${parent-collection}", "${collection}")
               return (element c:result { concat(request:get-url(), $response) })
             </c:text>
           </c:query>
@@ -477,7 +567,7 @@
             
             <xsl:template match="text()" name="text" priority="1">
               <xsl:variable name="regex" as="xs:string">
-                <xsl:text>\$\{([a-zA-Z0-9]{1,20})\}</xsl:text>
+                <xsl:text>\$\{([a-zA-Z0-9-]{1,20})\}</xsl:text>
               </xsl:variable>
               <xsl:analyze-string select="." regex="{$regex}">
                 <xsl:matching-substring>
