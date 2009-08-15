@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <p:library xmlns:p="http://www.w3.org/ns/xproc" xmlns:c="http://www.w3.org/ns/xproc-step"
+  xmlns:xs="http://www.w3.org/2001/XMLSchema" 
   xmlns:cx="http://xmlcalabash.com/ns/extensions" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
   xmlns:saxon="http://saxon.sf.net/" xmlns:exist="http://exist.sourceforge.net/NS/exist"
-  xmlns:wxp="http://www.wordsinboxes.com/xproc" xmlns:ex="http://www.wordsinboxes.com/xproc/exist">
+  xmlns:wxp="http://www.wordsinboxes.com/xproc" xmlns:ex="http://www.wordsinboxes.com/xproc/exist" >
 
   <p:documentation xmlns="http://www.w3.org/1999/xhtml">
     <div>
@@ -10,7 +11,7 @@
       <h2>Version 0.1</h2>
       <p>The steps defined in this library are implemented using the eXist REST interface.</p>
       <p>Contact: James Sulak</p>
-      <p>Public repository: http://bitbucket.org/jasulak/exist-xproc-library/</p>
+      <p>Public repository: http://bitbucket.org/jasulak/exist-xproc-library/</p>      
     </div>
   </p:documentation>
 
@@ -32,11 +33,11 @@
   <p:declare-step type="ex:extract">
     <p:output port="result" sequence="true"/>
 
-    <p:option name="uri" required="true"/>
-    <p:option name="user" select="''"/>
-    <p:option name="password" select="''"/>
-    <p:option name="resource" select="''" />
-    <p:option name="subcollections" select="'false'"/>
+    <p:option name="uri" required="true"/>             <!-- URI of collection -->
+    <p:option name="user" select="''"/>                <!-- eXist username -->
+    <p:option name="password" select="''"/>            <!-- eXist password -->
+    <p:option name="resource" select="''" />           <!-- resource to extract -->
+    <p:option name="subcollections" select="'false'"/> <!-- extract subcollections? (boolean) -->
     
     <!-- Create a uri without the trailing slash -->
     <p:variable name="clean-uri" select="replace($uri, '(.*)/$', '$1')" >
@@ -120,6 +121,7 @@
 
 
   <!-- TODO: Make it conditionally create collections -->
+  <!-- TODO: optional authentication? -->
 
   <p:documentation xmlns="http://www.w3.org/1999/xhtml">
     <h3>ex:store</h3>
@@ -131,12 +133,11 @@
 
   <p:declare-step type="ex:store" name="store-def">
     <p:input port="source" primary="true" sequence="false"/>
-    <p:output port="result"/>
-
-    <p:option name="uri" required="true"/>
-    <p:option name="resource" required="true"/>
-    <p:option name="user" required="true"/>
-    <p:option name="password" required="true"/>
+    <p:output port="result"/>                  
+    <p:option name="uri" required="true"/>      <!-- URI of collection -->
+    <p:option name="resource" required="true"/> <!-- name of new resource -->
+    <p:option name="user" select="''"/>         <!-- eXist username -->
+    <p:option name="password" select="''"/>     <!-- eXist password -->
 
     <!-- Create a uri without the trailing slash -->
     <p:variable name="clean-uri" select="replace($uri, '(.*)/$', '$1')" />    
@@ -175,6 +176,7 @@
 
 
 
+
   <p:documentation xmlns="http://www.w3.org/1999/xhtml">
     <h3>ex:remove</h3>
     <p>The <code>ex:remove</code> step removes a single resource or collection from the collection
@@ -187,12 +189,11 @@
 
   <p:declare-step type="ex:remove" name="remove-def">
     <p:output port="result" primary="true"/>
-
-    <p:option name="uri"/>
-    <p:option name="collection" select="''"/>
-    <p:option name="resource" select="''"/>
-    <p:option name="user"/>
-    <p:option name="password"/>    
+    <p:option name="uri"/>                    <!-- URI of collection -->  
+    <p:option name="collection" select="''"/> <!-- name of subcollection to remove -->
+    <p:option name="resource" select="''"/>   <!-- name of resource to remove -->
+    <p:option name="user"/>                   <!-- eXist password -->
+    <p:option name="password"/>               <!-- eXist username -->
 
     <p:variable name="path" select="replace(substring-after($uri, 'rest/'), '/$', '')">
       <p:empty/>
@@ -233,24 +234,17 @@
       </p:otherwise>
     </p:choose>
 
-    <!-- Fill in the needed parameters -->
-    <!-- NOTE: Or maybe even a generic construct-request that can take the specific function you want to complete as a parameter -->
-    <wxp:resolve-placeholder placeholder="user">
-      <p:with-option name="value" select="$user"/>
-    </wxp:resolve-placeholder>
-    <wxp:resolve-placeholder placeholder="password">
-      <p:with-option name="value" select="$password"/>
-    </wxp:resolve-placeholder>  
-    <wxp:resolve-placeholder placeholder="path">
-      <p:with-option name="value" select="$path"/>
-    </wxp:resolve-placeholder>
-    <wxp:resolve-placeholder placeholder="resource">
-      <p:with-option name="value" select="$resource"/>
-    </wxp:resolve-placeholder>
-    <wxp:resolve-placeholder placeholder="collection">
-      <p:with-option name="value" select="$collection"/>
-    </wxp:resolve-placeholder>
-
+    <wxp:resolve-placeholders>
+      <p:input port="parameters">
+        <p:empty />
+      </p:input>
+      <p:with-param name="user" select="$user" />
+      <p:with-param name="password" select="$password" />
+      <p:with-param name="path" select="$path" />
+      <p:with-param name="resource" select="$resource" />
+      <p:with-param name="collection" select="$collection" />
+    </wxp:resolve-placeholders>
+    
     <ex:xquery>
       <p:with-option name="user" select="$user"/>
       <p:with-option name="password" select="$password"/>
@@ -279,10 +273,9 @@
   <p:declare-step type="ex:xquery" name="xquery-def">
     <p:input port="source" primary="true"/>
     <p:output port="result" primary="true"/>
-
-    <p:option name="uri" required="true"/>
-    <p:option name="user" required="true"/>
-    <p:option name="password" required="true"/>
+    <p:option name="uri" required="true"/>      <!-- URI of eXist database -->
+    <p:option name="user" required="true"/>     <!-- eXist username -->
+    <p:option name="password" required="true"/> <!-- eXist password -->
 
     <!-- Change the xproc document namespace to the exist namespace -->
     <p:namespace-rename from="http://www.w3.org/ns/xproc-step"
@@ -330,10 +323,10 @@
   <p:declare-step type="ex:create" name="create-def">
     <p:output port="result" primary="true" sequence="true"/>
     
-    <p:option name="uri" required="true"/>
-    <p:option name="user" required="true"/>
-    <p:option name="password" required="true"/>    
-    <p:option name="collection" required="true"/>
+    <p:option name="uri" required="true"/>        <!-- URI of collection -->
+    <p:option name="user" select="''"/>           <!-- eXist username -->
+    <p:option name="password" select="''"/>       <!-- eXist password -->
+    <p:option name="collection" required="true"/> <!-- subcollection to create -->
     
     <p:variable name="parent-collection" select="replace($uri, '.*(/db.*)$', '$1')">
       <p:empty/>
@@ -363,18 +356,16 @@
       </p:input>
     </p:identity>
     
-    <wxp:resolve-placeholder placeholder="user">
-      <p:with-option name="value" select="$user"/>
-    </wxp:resolve-placeholder>
-    <wxp:resolve-placeholder placeholder="password">
-      <p:with-option name="value" select="$password"/>
-    </wxp:resolve-placeholder>
-    <wxp:resolve-placeholder placeholder="parent-collection">
-      <p:with-option name="value" select="$parent-collection"/>
-    </wxp:resolve-placeholder>
-    <wxp:resolve-placeholder placeholder="collection">
-      <p:with-option name="value" select="$collection"/>
-    </wxp:resolve-placeholder>
+    
+    <wxp:resolve-placeholders>
+      <p:input port="parameters">
+        <p:empty />
+      </p:input>
+      <p:with-param name="user" select="$user" />
+      <p:with-param name="password" select="$password" />
+      <p:with-param name="parent-collection" select="$parent-collection" />
+      <p:with-param name="collection" select="$collection" />
+    </wxp:resolve-placeholders>
     
     <ex:xquery>
       <p:with-option name="user" select="$user"/>
@@ -405,14 +396,12 @@
   </p:documentation>
 
   <p:declare-step type="ex:list" name="list-def">
-    <p:output port="result" primary="true"/>
-
-    <p:option name="uri"/>
-    <p:option name="user" select="''" />
-    <p:option name="password" select="''" />
-    
-    <p:option name="resources" select="'true'"/>
-    <p:option name="collections" select="'true'"/>
+    <p:output port="result" primary="true"/>        
+    <p:option name="uri" required="true"/>          <!-- URI of collection -->
+    <p:option name="user" select="''" />            <!-- eXist username  -->
+    <p:option name="password" select="''" />        <!-- eXist password  -->
+    <p:option name="resources" select="'true'"/>    <!-- list resources? (boolean) -->
+    <p:option name="collections" select="'true'"/>  <!-- list subcollections? (boolean) -->
     
     <!-- Create a uri without the trailing slash -->
     <p:variable name="clean-uri" select="replace($uri, '(.*)/$', '$1')" >
@@ -462,6 +451,57 @@
   <!-- ================================= -->
   <!-- Utility Steps -->
   <!-- ================================= -->
+
+
+  <p:declare-step type="wxp:resolve-placeholders" name="resolver">
+    <p:input port="source" primary="true" sequence="false"/>
+    <p:input port="parameters" kind="parameter"/>
+    <p:output port="result" />
+    
+    <p:parameters name="parameters">
+      <p:input port="parameters">
+        <p:pipe port="parameters" step="resolver"/>
+      </p:input>
+    </p:parameters>
+    
+    <p:xslt>
+      <p:input port="source">
+        <p:pipe port="source" step="resolver"/>
+        <p:pipe port="result" step="parameters"/>
+      </p:input>
+      <p:input port="stylesheet">
+        <p:inline>
+          <xsl:stylesheet version="2.0">
+            
+            <xsl:variable name="values" select="collection()[2]/c:param-set/c:param" as="element()*" />
+            
+            <xsl:template match="text()" priority="1">
+              <xsl:variable name="regex" as="xs:string">
+                <xsl:text>\$\{([a-zA-Z0-9]{1,20})\}</xsl:text>
+              </xsl:variable>
+              <xsl:analyze-string select="." regex="{$regex}">
+                <xsl:matching-substring>
+                  <xsl:variable name="placeholder" select="regex-group(1)" />
+                  <xsl:value-of select="$values[@name = $placeholder]/@value" />
+                </xsl:matching-substring>
+                <xsl:non-matching-substring>
+                  <xsl:value-of select="." />
+                </xsl:non-matching-substring>
+              </xsl:analyze-string>
+            </xsl:template>
+            
+            <xsl:template match="@*|node()">
+              <xsl:copy>
+                <xsl:apply-templates select="@*|node()"/>
+              </xsl:copy>
+            </xsl:template>
+            
+          </xsl:stylesheet>
+        </p:inline>
+      </p:input>
+    </p:xslt>
+    
+  </p:declare-step>
 
 
   <!-- Shorthand for a common http-get.  
@@ -572,8 +612,6 @@
         </p:choose>
       </p:otherwise>
     </p:choose>
-
-
   </p:declare-step>
 
 
