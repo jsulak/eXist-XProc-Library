@@ -42,7 +42,7 @@
     <p:variable name="base-uri" select="replace($uri, '^(.*)/db/?.*$', '$1')">
       <p:empty />
     </p:variable>
-    <p:variable name="parent-collection" select="replace($uri, '.*(/db.*)$', '$1')">
+    <p:variable name="parent-collection" select="replace($uri, '.*(/db.*)//?$', '$1')">
       <p:empty/>
     </p:variable>
     
@@ -286,12 +286,15 @@
     <p:option name="user"/>                   <!-- eXist password -->
     <p:option name="password"/>               <!-- eXist username -->
 
-    <p:variable name="path" select="replace(substring-after($uri, 'rest/'), '/$', '')">
+    <p:variable name="parent-collection" select="replace($uri, '.*(/db.*)//?$', '$1')">
       <p:empty/>
     </p:variable>
     
     <!-- Create a uri without the trailing slash -->
     <p:variable name="clean-uri" select="replace($uri, '(.*)/$', '$1')" >
+      <p:empty />
+    </p:variable>
+    <p:variable name="base-uri" select="replace($clean-uri, '^(.*)/db/?.*$', '$1')">
       <p:empty />
     </p:variable>
 
@@ -300,20 +303,24 @@
         <p:inline>         
            <c:query xmlns="http://exist.sourceforge.net/NS/exist" start="1" max="20" cache="no">
              <c:text> 
+               declare namespace c="http://www.w3.org/ns/xproc-step";
                let $resource := "${resource}" 
                let $collection := "${collection}" 
                let $login := xmldb:login("xmldb:exist:///db", "${user}", "${password}") 
-               let $response := if ($resource != '' and $collection = '') 
-                                   then xmldb:remove("/${path}/", "${resource}") 
-                                   else if ($collection != '') 
-                                           then xmldb:remove("/${path}/${collection}") 
-                                           else () 
-               return $response                         
+               let $response := if ($resource != '') 
+                                then xmldb:remove("${parent-collection}", "${resource}") 
+                                else xmldb:remove("${parent-collection}/${collection}")
+               return (element c:result { concat(request:get-url(), "${parent-collection}/${resource}${collection}") } )
              </c:text>
            </c:query>            
         </p:inline>
       </p:input>
     </p:identity>
+
+    <cx:message>
+      <p:with-option name="message" select="$parent-collection" />
+    </cx:message>
+
 
     <!-- Abort step if wrong options specified -->
     <p:choose>
@@ -331,7 +338,7 @@
       </p:input>
       <p:with-param name="user" select="$user" />
       <p:with-param name="password" select="$password" />
-      <p:with-param name="path" select="$path" />
+      <p:with-param name="parent-collection" select="$parent-collection" />
       <p:with-param name="resource" select="$resource" />
       <p:with-param name="collection" select="$collection" />
     </wxp:resolve-placeholders>
@@ -339,14 +346,11 @@
     <ex:xquery>
       <p:with-option name="user" select="$user"/>
       <p:with-option name="password" select="$password"/>
-      <p:with-option name="uri" select="$clean-uri"/>
+      <p:with-option name="uri" select="$base-uri"/>
     </ex:xquery>
 
-    <wxp:check-status success-status="200">
-      <p:with-option name="failonerror" select="'true'"/>
-      <p:with-option name="return-string" select="concat($clean-uri, '/', $resource, $collection)"/>
-    </wxp:check-status>
-    
+    <p:filter select="//c:result" />
+
   </p:declare-step>
 
 
@@ -463,14 +467,7 @@
       <p:with-option name="uri" select="$base-uri"/>
     </ex:xquery>
     
-    <p:choose>
-      <p:when test="//c:result = concat($clean-uri, '/', $collection)">
-        <p:filter select="//c:result" />
-      </p:when>
-      <p:otherwise>
-        <p:error code="creation-failed" />        
-      </p:otherwise>
-    </p:choose>
+    <p:filter select="//c:result" />
     
   </p:declare-step>
   
