@@ -475,7 +475,7 @@
             
             <xsl:variable name="values" select="collection()[2]/c:param-set/c:param" as="element()*" />
             
-            <xsl:template match="text()" priority="1">
+            <xsl:template match="text()" name="text" priority="1">
               <xsl:variable name="regex" as="xs:string">
                 <xsl:text>\$\{([a-zA-Z0-9]{1,20})\}</xsl:text>
               </xsl:variable>
@@ -490,7 +490,13 @@
               </xsl:analyze-string>
             </xsl:template>
             
-            <xsl:template match="@*|node()">
+            <xsl:template match="@*">
+              <xsl:attribute name="{name(.)}">
+                <xsl:call-template name="text" />
+              </xsl:attribute>
+            </xsl:template>
+            
+            <xsl:template match="node()">
               <xsl:copy>
                 <xsl:apply-templates select="@*|node()"/>
               </xsl:copy>
