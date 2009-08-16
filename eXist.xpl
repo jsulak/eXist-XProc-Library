@@ -236,8 +236,10 @@
             <p:empty />
           </p:with-option>
         </wxp:smart-http-get>
-<!--        <p:unwrap match="//c:*" />-->
-        <p:add-xml-base  />        
+        <p:unwrap match="//c:*" />
+        <p:add-attribute attribute-name="xml:base" match="/*">
+          <p:with-option name="attribute-value" select="concat($clean-uri, '/', $resource)" />
+        </p:add-attribute>
       </p:when>
       <p:otherwise>
         
