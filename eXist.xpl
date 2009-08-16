@@ -88,12 +88,12 @@
       <p:with-param name="collection" select="$collection" />
     </wxp:resolve-placeholders>
     
-    <cx:message>
+    <!--<cx:message>
       <p:with-option name="message" select="concat($base-uri, $target, '/', $resource)" />
     </cx:message>
     <cx:message>
       <p:with-option name="message" select="$base-uri" />
-    </cx:message>
+    </cx:message>-->
     
     <ex:xquery>
       <p:with-option name="user" select="$user"/>
@@ -175,12 +175,12 @@
       <p:with-param name="collection" select="$collection" />
     </wxp:resolve-placeholders>
     
-    <cx:message>
+    <!--<cx:message>
       <p:with-option name="message" select="concat($base-uri, $target, '/', $resource)" />
     </cx:message>
     <cx:message>
       <p:with-option name="message" select="$base-uri" />
-    </cx:message>
+    </cx:message>-->
     
     <ex:xquery>
       <p:with-option name="user" select="$user"/>
@@ -267,12 +267,11 @@
           <p:output port="result" sequence="true"/>
           
           <p:choose>
-            <p:when test="c:resource">
-              <!-- TODO: remove messages -->
-              <cx:message>
+            <p:when test="c:resource">              
+              <!--<cx:message>
                 <p:with-option name="message" select="concat('resource: ', $clean-uri, '/', c:resource/@name)"
                 />
-              </cx:message>
+              </cx:message>-->
               <ex:extract>
                 <p:with-option name="uri" select="$clean-uri"/>
                 <p:with-option name="resource" select="c:resource/@name"/>
@@ -281,10 +280,10 @@
               </ex:extract>
             </p:when>
             <p:otherwise>
-              <cx:message>
+              <!--<cx:message>
                 <p:with-option name="message"
                   select="concat('collection: ', $clean-uri, '/', c:collection/@name)"/>
-              </cx:message>
+              </cx:message>-->
               <ex:extract subcollections="true">
                 <p:with-option name="uri" select="concat($clean-uri, '/', c:collection/@name)"/>
                 <p:with-option name="user" select="$user" />
@@ -403,11 +402,6 @@
         </p:inline>
       </p:input>
     </p:identity>
-
-    <cx:message>
-      <p:with-option name="message" select="$parent-collection" />
-    </cx:message>
-
 
     <!-- Abort step if wrong options specified -->
     <p:choose>
