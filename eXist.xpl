@@ -29,11 +29,11 @@
     <p:output port="result" primary="true"/>
     
     <p:option name="uri"/>                     <!-- URI of collection -->
+    <p:option name="user"/>                    <!-- eXist user -->
+    <p:option name="password"/>                <!-- eXist password -->
     <p:option name="resource" select="''"/>    <!-- name of resource to copy -->
     <p:option name="collection" select="''"/>  <!-- name of collection to copy -->
     <p:option name="target" required="true" /> <!-- name of target collection -->
-    <p:option name="user"/>                    <!-- eXist user -->
-    <p:option name="password"/>                <!-- eXist password -->
     
     <!-- Create a uri without the trailing slash -->
     <p:variable name="clean-uri" select="replace($uri, '(.*)/$', '$1')" >
@@ -116,11 +116,11 @@
     <p:output port="result" primary="true"/>
     
     <p:option name="uri"/>                     <!-- URI of collection -->
+    <p:option name="user"/>                    <!-- eXist user -->
+    <p:option name="password"/>                <!-- eXist password -->   
     <p:option name="resource" select="''"/>    <!-- name of resource to move -->
     <p:option name="collection" select="''"/>  <!-- name of collection to move -->
     <p:option name="target" required="true" /> <!-- name of target collection -->
-    <p:option name="user"/>                    <!-- eXist user -->
-    <p:option name="password"/>                <!-- eXist password -->   
     
     <!-- Create a uri without the trailing slash -->
     <p:variable name="clean-uri" select="replace($uri, '(.*)/$', '$1')" >
@@ -312,10 +312,10 @@
     <p:input port="source" primary="true" sequence="false"/>
     <p:output port="result"/>                  
     <p:option name="uri" required="true"/>      <!-- URI of collection -->
-    <p:option name="resource" required="true"/> <!-- name of new resource -->
     <p:option name="user" select="''"/>         <!-- eXist username -->
-    <p:option name="password" select="''"/>     <!-- eXist password -->
-
+    <p:option name="password" select="''"/>     <!-- eXist password -->    
+    <p:option name="resource" required="true"/> <!-- name of new resource -->
+    
     <!-- Create a uri without the trailing slash -->
     <p:variable name="clean-uri" select="replace($uri, '(.*)/$', '$1')" />    
 
@@ -367,11 +367,11 @@
   <p:declare-step type="ex:remove" name="remove-def">
     <p:output port="result" primary="true"/>
     <p:option name="uri"/>                    <!-- URI of collection -->  
+    <p:option name="user"/>                   <!-- eXist password -->
+    <p:option name="password"/>               <!-- eXist username -->    
     <p:option name="collection" select="''"/> <!-- name of subcollection to remove -->
     <p:option name="resource" select="''"/>   <!-- name of resource to remove -->
-    <p:option name="user"/>                   <!-- eXist password -->
-    <p:option name="password"/>               <!-- eXist username -->
-
+    
     <p:variable name="parent-collection" select="replace($uri, '.*(/db.*[^//])[//]?$', '$1')">
       <p:empty/>
     </p:variable>
