@@ -28,12 +28,12 @@
   <p:declare-step type="ex:copy">
     <p:output port="result" primary="true"/>
     
-    <p:option name="uri"/>
-    <p:option name="collection" select="''"/>
-    <p:option name="resource" select="''"/>
-    <p:option name="target" required="true" />
-    <p:option name="user"/>
-    <p:option name="password"/>   
+    <p:option name="uri"/>                     <!-- URI of collection -->
+    <p:option name="resource" select="''"/>    <!-- name of resource to copy -->
+    <p:option name="collection" select="''"/>  <!-- name of collection to copy -->
+    <p:option name="target" required="true" /> <!-- name of target collection -->
+    <p:option name="user"/>                    <!-- eXist user -->
+    <p:option name="password"/>                <!-- eXist password -->
     
     <!-- Create a uri without the trailing slash -->
     <p:variable name="clean-uri" select="replace($uri, '(.*)/$', '$1')" >
@@ -42,7 +42,7 @@
     <p:variable name="base-uri" select="replace($uri, '^(.*)/db/?.*$', '$1')">
       <p:empty />
     </p:variable>
-    <p:variable name="parent-collection" select="replace($uri, '.*(/db.*)$', '$1')">
+    <p:variable name="parent-collection" select="replace($uri, '.*(/db.*[^//])[//]?$', '$1')">
       <p:empty/>
     </p:variable>
     
@@ -115,12 +115,12 @@
   <p:declare-step type="ex:move">
     <p:output port="result" primary="true"/>
     
-    <p:option name="uri"/>
-    <p:option name="collection" select="''"/>
-    <p:option name="resource" select="''"/>
-    <p:option name="target" required="true" />
-    <p:option name="user"/>
-    <p:option name="password"/>   
+    <p:option name="uri"/>                     <!-- URI of collection -->
+    <p:option name="resource" select="''"/>    <!-- name of resource to move -->
+    <p:option name="collection" select="''"/>  <!-- name of collection to move -->
+    <p:option name="target" required="true" /> <!-- name of target collection -->
+    <p:option name="user"/>                    <!-- eXist user -->
+    <p:option name="password"/>                <!-- eXist password -->   
     
     <!-- Create a uri without the trailing slash -->
     <p:variable name="clean-uri" select="replace($uri, '(.*)/$', '$1')" >
@@ -129,7 +129,7 @@
     <p:variable name="base-uri" select="replace($uri, '^(.*)/db/?.*$', '$1')">
       <p:empty />
     </p:variable>
-    <p:variable name="parent-collection" select="replace($uri, '.*(/db.*)$', '$1')">
+    <p:variable name="parent-collection" select="replace($uri, '.*(/db.*[^//])[//]?$', '$1')">
       <p:empty/>
     </p:variable>
     
@@ -224,19 +224,20 @@
       <p:xpath-context>
         <p:empty />
       </p:xpath-context>
-      <p:when test="$resource != ''">
+      <p:when test="$resource != ''">        
         <wxp:smart-http-get>
           <p:with-option name="uri" select="concat($clean-uri, '/', $resource)" >
             <p:empty />
-          </p:with-option>
+          </p:with-option>          
           <p:with-option name="password" select="$password">
             <p:empty />
           </p:with-option>
           <p:with-option name="user" select="$user">
             <p:empty />
           </p:with-option>
-        </wxp:smart-http-get>        
-        <p:add-xml-base />          
+        </wxp:smart-http-get>
+<!--        <p:unwrap match="//c:*" />-->
+        <p:add-xml-base  />        
       </p:when>
       <p:otherwise>
         
@@ -292,7 +293,6 @@
         </p:for-each>
       </p:otherwise>
     </p:choose>
-
   </p:declare-step>
 
 
@@ -371,7 +371,7 @@
     <p:option name="user"/>                   <!-- eXist password -->
     <p:option name="password"/>               <!-- eXist username -->
 
-    <p:variable name="parent-collection" select="replace($uri, '.*(/db.*)$', '$1')">
+    <p:variable name="parent-collection" select="replace($uri, '.*(/db.*[^//])[//]?$', '$1')">
       <p:empty/>
     </p:variable>
     
@@ -454,8 +454,8 @@
     <p:input port="source" primary="true"/>
     <p:output port="result" primary="true"/>
     <p:option name="uri" required="true"/>      <!-- URI of eXist database -->
-    <p:option name="user" required="true"/>     <!-- eXist username -->
-    <p:option name="password" required="true"/> <!-- eXist password -->
+    <p:option name="user" select="''"/>         <!-- eXist username -->
+    <p:option name="password" select="''"/>     <!-- eXist password -->
 
     <!-- Change the xproc document namespace to the exist namespace -->
     <p:namespace-rename from="http://www.w3.org/ns/xproc-step"
@@ -508,7 +508,7 @@
     <p:option name="password" select="''"/>       <!-- eXist password -->
     <p:option name="collection" required="true"/> <!-- subcollection to create -->
     
-    <p:variable name="parent-collection" select="replace($uri, '.*(/db.*)$', '$1')">
+    <p:variable name="parent-collection" select="replace($uri, '.*(/db.*[^//])[//]?$', '$1')">
       <p:empty/>
     </p:variable>
     <p:variable name="base-uri" select="replace($uri, '^(.*)/db/?.*$', '$1')">
@@ -534,7 +534,6 @@
         </p:inline>
       </p:input>
     </p:identity>
-    
     
     <wxp:resolve-placeholders>
       <p:input port="parameters">
