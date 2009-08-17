@@ -28,7 +28,7 @@
   <p:declare-step type="ex:copy">
     <p:output port="result" primary="true"/>
     
-    <p:option name="uri"/>                     <!-- URI of collection -->
+    <p:option name="href"/>                    <!-- URI of collection -->
     <p:option name="user"/>                    <!-- eXist user -->
     <p:option name="password"/>                <!-- eXist password -->
     <p:option name="resource" select="''"/>    <!-- name of resource to copy -->
@@ -36,13 +36,13 @@
     <p:option name="target" required="true" /> <!-- name of target collection -->
     
     <!-- Create a uri without the trailing slash -->
-    <p:variable name="clean-uri" select="replace($uri, '(.*)/$', '$1')" >
+    <p:variable name="clean-uri" select="replace($href, '(.*)/$', '$1')" >
       <p:empty />
     </p:variable>
-    <p:variable name="base-uri" select="replace($uri, '^(.*)/db/?.*$', '$1')">
+    <p:variable name="base-uri" select="replace($href, '^(.*)/db/?.*$', '$1')">
       <p:empty />
     </p:variable>
-    <p:variable name="parent-collection" select="replace($uri, '.*(/db.*[^//])[//]?$', '$1')">
+    <p:variable name="parent-collection" select="replace($href, '.*(/db.*[^//])[//]?$', '$1')">
       <p:empty/>
     </p:variable>
     
@@ -98,7 +98,7 @@
     <ex:xquery>
       <p:with-option name="user" select="$user"/>
       <p:with-option name="password" select="$password"/>
-      <p:with-option name="uri" select="$base-uri"/>
+      <p:with-option name="href" select="$base-uri"/>
     </ex:xquery>
     
     <p:filter select="//c:result" />
@@ -115,7 +115,7 @@
   <p:declare-step type="ex:move">
     <p:output port="result" primary="true"/>
     
-    <p:option name="uri"/>                     <!-- URI of collection -->
+    <p:option name="href"/>                    <!-- URI of collection -->
     <p:option name="user"/>                    <!-- eXist user -->
     <p:option name="password"/>                <!-- eXist password -->   
     <p:option name="resource" select="''"/>    <!-- name of resource to move -->
@@ -123,13 +123,13 @@
     <p:option name="target" required="true" /> <!-- name of target collection -->
     
     <!-- Create a uri without the trailing slash -->
-    <p:variable name="clean-uri" select="replace($uri, '(.*)/$', '$1')" >
+    <p:variable name="clean-uri" select="replace($href, '(.*)/$', '$1')" >
       <p:empty />
     </p:variable>
-    <p:variable name="base-uri" select="replace($uri, '^(.*)/db/?.*$', '$1')">
+    <p:variable name="base-uri" select="replace($href, '^(.*)/db/?.*$', '$1')">
       <p:empty />
     </p:variable>
-    <p:variable name="parent-collection" select="replace($uri, '.*(/db.*[^//])[//]?$', '$1')">
+    <p:variable name="parent-collection" select="replace($href, '.*(/db.*[^//])[//]?$', '$1')">
       <p:empty/>
     </p:variable>
     
@@ -185,7 +185,7 @@
     <ex:xquery>
       <p:with-option name="user" select="$user"/>
       <p:with-option name="password" select="$password"/>
-      <p:with-option name="uri" select="$base-uri"/>
+      <p:with-option name="href" select="$base-uri"/>
     </ex:xquery>
     
     <p:filter select="//c:result" />
@@ -198,8 +198,8 @@
     <h3>ex:extract</h3>
     <p>The <code>ex:extract</code> step extracts resources from an eXist database.  
        If <code>resource</code> is specified, then it extracts a single resource from
-       the collection specified by the <code>uri</code> option.  If <code>resource</code> is not specified,
-       then it extracts all the resources contained in the collection specified by <code>uri</code>.
+       the collection specified by the <code>href</code> option.  If <code>resource</code> is not specified,
+       then it extracts all the resources contained in the collection specified by <code>href</code>.
        If <code>subcollections</code> is set to 'true', then it recurses through all the subcollections 
        and extracts those resources as well.</p>
     <p>The step fails if the resource is inaccessible or does not exist.</p>
@@ -208,14 +208,14 @@
   <p:declare-step type="ex:extract">
     <p:output port="result" sequence="true"/>
 
-    <p:option name="uri" required="true"/>             <!-- URI of collection -->
+    <p:option name="href" required="true"/>            <!-- URI of collection -->
     <p:option name="user" select="''"/>                <!-- eXist username -->
     <p:option name="password" select="''"/>            <!-- eXist password -->
     <p:option name="resource" select="''" />           <!-- resource to extract -->
     <p:option name="subcollections" select="'false'"/> <!-- extract subcollections? (boolean) -->
     
     <!-- Create a uri without the trailing slash -->
-    <p:variable name="clean-uri" select="replace($uri, '(.*)/$', '$1')" >
+    <p:variable name="clean-uri" select="replace($href, '(.*)/$', '$1')" >
       <p:empty />
     </p:variable>
     
@@ -226,7 +226,7 @@
       </p:xpath-context>
       <p:when test="$resource != ''">        
         <wxp:smart-http-get>
-          <p:with-option name="uri" select="concat($clean-uri, '/', $resource)" >
+          <p:with-option name="href" select="concat($clean-uri, '/', $resource)" >
             <p:empty />
           </p:with-option>          
           <p:with-option name="password" select="$password">
@@ -248,7 +248,7 @@
          -->
         
         <ex:list>
-          <p:with-option name="uri" select="$clean-uri">
+          <p:with-option name="href" select="$clean-uri">
             <p:empty/>
           </p:with-option>
           <p:with-option name="collections" select="$subcollections">
@@ -273,7 +273,7 @@
                 />
               </cx:message>-->
               <ex:extract>
-                <p:with-option name="uri" select="$clean-uri"/>
+                <p:with-option name="href" select="$clean-uri"/>
                 <p:with-option name="resource" select="c:resource/@name"/>
                 <p:with-option name="user" select="$user" />
                 <p:with-option name="password" select="$password" />
@@ -285,7 +285,7 @@
                   select="concat('collection: ', $clean-uri, '/', c:collection/@name)"/>
               </cx:message>-->
               <ex:extract subcollections="true">
-                <p:with-option name="uri" select="concat($clean-uri, '/', c:collection/@name)"/>
+                <p:with-option name="href" select="concat($clean-uri, '/', c:collection/@name)"/>
                 <p:with-option name="user" select="$user" />
                 <p:with-option name="password" select="$password" />
               </ex:extract>
@@ -303,7 +303,7 @@
   <p:documentation xmlns="http://www.w3.org/1999/xhtml">
     <h3>ex:store</h3>
     <p>The <code>ex:store</code> step stores the document provided on the input port in an eXist
-      database in the location provided by the <code>uri</code> option.</p>
+      database in the location provided by the <code>href</code> option.</p>
     <p>It returns a <code>&lt;c:result/></code> containing the absolute URI of the stored file.
        The step fails if the resource cannot be stored.</p>
   </p:documentation>
@@ -311,13 +311,13 @@
   <p:declare-step type="ex:store" name="store-def">
     <p:input port="source" primary="true" sequence="false"/>
     <p:output port="result"/>                  
-    <p:option name="uri" required="true"/>      <!-- URI of collection -->
+    <p:option name="href" required="true"/>     <!-- URI of collection -->
     <p:option name="user" select="''"/>         <!-- eXist username -->
     <p:option name="password" select="''"/>     <!-- eXist password -->    
     <p:option name="resource" required="true"/> <!-- name of new resource -->
     
     <!-- Create a uri without the trailing slash -->
-    <p:variable name="clean-uri" select="replace($uri, '(.*)/$', '$1')" />    
+    <p:variable name="clean-uri" select="replace($href, '(.*)/$', '$1')" />    
 
     <p:wrap wrapper="c:body" match="/"/>
     <p:add-attribute attribute-name="content-type" attribute-value="text/xml" match="/c:body"/>
@@ -357,7 +357,7 @@
   <p:documentation xmlns="http://www.w3.org/1999/xhtml">
     <h3>ex:remove</h3>
     <p>The <code>ex:remove</code> step removes a single resource or collection from the collection
-      specified in the <code>uri</code> option.</p>
+      specified in the <code>href</code> option.</p>
     <p>It returns a <code>&lt;c:result/></code> containing the absolute URI of the deleted file.
        The step fails if the resource does not exist or cannot be deleted. </p>
   </p:documentation>
@@ -366,18 +366,18 @@
 
   <p:declare-step type="ex:remove" name="remove-def">
     <p:output port="result" primary="true"/>
-    <p:option name="uri"/>                    <!-- URI of collection -->  
+    <p:option name="href"/>                   <!-- URI of collection -->  
     <p:option name="user"/>                   <!-- eXist password -->
     <p:option name="password"/>               <!-- eXist username -->    
     <p:option name="collection" select="''"/> <!-- name of subcollection to remove -->
     <p:option name="resource" select="''"/>   <!-- name of resource to remove -->
     
-    <p:variable name="parent-collection" select="replace($uri, '.*(/db.*[^//])[//]?$', '$1')">
+    <p:variable name="parent-collection" select="replace($href, '.*(/db.*[^//])[//]?$', '$1')">
       <p:empty/>
     </p:variable>
     
     <!-- Create a uri without the trailing slash -->
-    <p:variable name="clean-uri" select="replace($uri, '(.*)/$', '$1')" >
+    <p:variable name="clean-uri" select="replace($href, '(.*)/$', '$1')" >
       <p:empty />
     </p:variable>
     <p:variable name="base-uri" select="replace($clean-uri, '^(.*)/db/?.*$', '$1')">
@@ -427,7 +427,7 @@
     <ex:xquery>
       <p:with-option name="user" select="$user"/>
       <p:with-option name="password" select="$password"/>
-      <p:with-option name="uri" select="$base-uri"/>
+      <p:with-option name="href" select="$base-uri"/>
     </ex:xquery>
 
     <p:filter select="//c:result" />
@@ -449,7 +449,7 @@
   <p:declare-step type="ex:xquery" name="xquery-def">
     <p:input port="source" primary="true"/>
     <p:output port="result" primary="true"/>
-    <p:option name="uri" required="true"/>      <!-- URI of eXist database -->
+    <p:option name="href" required="true"/>     <!-- URI of eXist database -->
     <p:option name="user" select="''"/>         <!-- eXist username -->
     <p:option name="password" select="''"/>     <!-- eXist password -->
 
@@ -480,7 +480,7 @@
       <p:with-option name="attribute-value" select="$user"/>
     </p:add-attribute>
     <p:add-attribute match="c:request" attribute-name="href">
-      <p:with-option name="attribute-value" select="$uri"/>
+      <p:with-option name="attribute-value" select="$href"/>
     </p:add-attribute>
 
     <p:http-request/>
@@ -491,7 +491,7 @@
   <p:documentation xmlns="http://www.w3.org/1999/xhtml">
     <h3>ex:create</h3>
     <p>The <code>ex:create</code> step creates a single empty collection.  The name is specified in the <code>collection option</code>, and its 
-      location is specified in the <code>uri</code> option.</p>
+      location is specified in the <code>href</code> option.</p>
     <p>It returns a <code>&lt;c:result/></code> containing the absolute URI of the created collection.  
       The step fails if the collection cannot be created.</p>
   </p:documentation>
@@ -499,20 +499,20 @@
   <p:declare-step type="ex:create" name="create-def">
     <p:output port="result" primary="true" sequence="true"/>
     
-    <p:option name="uri" required="true"/>        <!-- URI of collection -->
+    <p:option name="href" required="true"/>       <!-- URI of collection -->
     <p:option name="user" select="''"/>           <!-- eXist username -->
     <p:option name="password" select="''"/>       <!-- eXist password -->
     <p:option name="collection" required="true"/> <!-- subcollection to create -->
     
-    <p:variable name="parent-collection" select="replace($uri, '.*(/db.*[^//])[//]?$', '$1')">
+    <p:variable name="parent-collection" select="replace($href, '.*(/db.*[^//])[//]?$', '$1')">
       <p:empty/>
     </p:variable>
-    <p:variable name="base-uri" select="replace($uri, '^(.*)/db/?.*$', '$1')">
+    <p:variable name="base-uri" select="replace($href, '^(.*)/db/?.*$', '$1')">
       <p:empty />
     </p:variable>
     
     <!-- Create a uri without the trailing slash -->
-    <p:variable name="clean-uri" select="replace($uri, '(.*)/$', '$1')" >
+    <p:variable name="clean-uri" select="replace($href, '(.*)/$', '$1')" >
       <p:empty />
     </p:variable>
     
@@ -544,7 +544,7 @@
     <ex:xquery>
       <p:with-option name="user" select="$user"/>
       <p:with-option name="password" select="$password"/>
-      <p:with-option name="uri" select="$base-uri"/>
+      <p:with-option name="href" select="$base-uri"/>
     </ex:xquery>
     
     <p:filter select="//c:result" />
@@ -556,7 +556,7 @@
   <p:documentation xmlns="http://www.w3.org/1999/xhtml">
     <h3>ex:list</h3>
     <p>The <code>ex:list</code> step returns a list of the resources and/or collections contained in
-      the collection specified in the <code>uri</code> option.</p>
+      the collection specified in the <code>href</code> option.</p>
     <p>It's behavior is modeled after <code>&lt;p:directory-list</code>. It returns a
         <code>&lt;c:collection></code> containing a sequence of <code>&lt;c:resource</code>
       and <code>&lt;c:collection</code>s. The step fails if the resource does not exist or cannot be deleted.</p>
@@ -564,19 +564,19 @@
 
   <p:declare-step type="ex:list" name="list-def">
     <p:output port="result" primary="true"/>        
-    <p:option name="uri" required="true"/>          <!-- URI of collection -->
+    <p:option name="href" required="true"/>         <!-- URI of collection -->
     <p:option name="user" select="''" />            <!-- eXist username  -->
     <p:option name="password" select="''" />        <!-- eXist password  -->
     <p:option name="resources" select="'true'"/>    <!-- list resources? (boolean) -->
     <p:option name="collections" select="'true'"/>  <!-- list subcollections? (boolean) -->
     
     <!-- Create a uri without the trailing slash -->
-    <p:variable name="clean-uri" select="replace($uri, '(.*)/$', '$1')" >
+    <p:variable name="clean-uri" select="replace($href, '(.*)/$', '$1')" >
       <p:empty />
     </p:variable>
     
     <wxp:smart-http-get>
-      <p:with-option name="uri" select="$clean-uri" >
+      <p:with-option name="href" select="$clean-uri" >
         <p:empty />
       </p:with-option>
       <p:with-option name="password" select="$password">
@@ -685,7 +685,7 @@
   <p:declare-step type="wxp:smart-http-get">
     <p:output port="result" sequence="true" />
     
-    <p:option name="uri" required="true"/>
+    <p:option name="href" required="true"/>
     <p:option name="user" select="''"/>
     <p:option name="password" select="''"/>
     
@@ -698,7 +698,7 @@
     </p:identity>
     
     <p:add-attribute attribute-name="href" match="/c:request">
-      <p:with-option name="attribute-value" select="$uri"  />
+      <p:with-option name="attribute-value" select="$href"  />
     </p:add-attribute>
     
     <p:choose>
