@@ -16,7 +16,7 @@
   </p:documentation>
 
 
-  <p:import href="library-1.0.xpl"/>
+  <!--<p:import href="library-1.0.xpl"/>-->
 
 
   <p:documentation xmlns="http://www.w3.org/1999/xhtml">
@@ -101,7 +101,7 @@
       <p:with-option name="href" select="$base-uri"/>
     </ex:xquery>
     
-    <p:filter select="//c:result" />
+    <p:unwrap match="/*" />
     
   </p:declare-step>
   
@@ -188,7 +188,7 @@
       <p:with-option name="href" select="$base-uri"/>
     </ex:xquery>
     
-    <p:filter select="//c:result" />
+    <p:unwrap match="/*" />
     
   </p:declare-step>
   
@@ -430,7 +430,7 @@
       <p:with-option name="href" select="$base-uri"/>
     </ex:xquery>
 
-    <p:filter select="//c:result" />
+    <p:unwrap match="/*" />
 
   </p:declare-step>
 
@@ -484,7 +484,38 @@
     </p:add-attribute>
 
     <p:http-request/>
-
+    
+    <!-- Put the result into an c:result element, and change the attribute namespaces -->
+    <p:xslt>
+      <p:input port="parameters">
+        <p:empty />
+      </p:input>
+      <p:input port="stylesheet">
+        <p:inline>
+          <xsl:stylesheet version="1.0">            
+            <xsl:template match="/">
+              <xsl:apply-templates select="c:response/c:body/exist:result" />
+            </xsl:template>            
+            <xsl:template match="exist:result">
+              <c:result>
+                <xsl:for-each select="@*">
+                  <xsl:attribute name="{concat('c:', local-name())}">
+                    <xsl:copy-of select="." />
+                  </xsl:attribute>
+                </xsl:for-each>
+                <xsl:apply-templates />
+              </c:result>
+            </xsl:template>            
+            <xsl:template match="@*|node()">
+              <xsl:copy>
+                <xsl:apply-templates select="@*|node()"/>
+              </xsl:copy>
+            </xsl:template>
+          </xsl:stylesheet>
+        </p:inline>
+      </p:input>
+    </p:xslt>
+    
   </p:declare-step>
 
 
@@ -546,8 +577,8 @@
       <p:with-option name="password" select="$password"/>
       <p:with-option name="href" select="$base-uri"/>
     </ex:xquery>
-    
-    <p:filter select="//c:result" />
+       
+    <p:unwrap match="/*" />
     
   </p:declare-step>
   
