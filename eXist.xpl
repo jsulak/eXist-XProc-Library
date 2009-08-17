@@ -7,7 +7,7 @@
 
   <p:documentation xmlns="http://www.w3.org/1999/xhtml">
     <div>
-      <h1>eXist Database Extension Library</h1>
+      <h1>eXist XProc Extension Library</h1>
       <h2>Version 0.1</h2>
       <p>The steps defined in this library are implemented using the eXist REST interface.</p>
       <p>Contact: James Sulak</p>
@@ -28,9 +28,9 @@
   <p:declare-step type="ex:copy">
     <p:output port="result" primary="true"/>
     
-    <p:option name="href"/>                    <!-- URI of collection -->
-    <p:option name="user"/>                    <!-- eXist user -->
-    <p:option name="password"/>                <!-- eXist password -->
+    <p:option name="href" required="true"/>    <!-- URI of collection -->
+    <p:option name="user" select="''"/>        <!-- eXist user -->
+    <p:option name="password" select="''"/>    <!-- eXist password -->
     <p:option name="resource" select="''"/>    <!-- name of resource to copy -->
     <p:option name="collection" select="''"/>  <!-- name of collection to copy -->
     <p:option name="target" required="true" /> <!-- name of target collection -->
@@ -115,9 +115,9 @@
   <p:declare-step type="ex:move">
     <p:output port="result" primary="true"/>
     
-    <p:option name="href"/>                    <!-- URI of collection -->
-    <p:option name="user"/>                    <!-- eXist user -->
-    <p:option name="password"/>                <!-- eXist password -->   
+    <p:option name="href" required="true"/>    <!-- URI of collection -->
+    <p:option name="user" select="''"/>        <!-- eXist user -->
+    <p:option name="password" select="''"/>    <!-- eXist password -->   
     <p:option name="resource" select="''"/>    <!-- name of resource to move -->
     <p:option name="collection" select="''"/>  <!-- name of collection to move -->
     <p:option name="target" required="true" /> <!-- name of target collection -->
@@ -367,8 +367,8 @@
   <p:declare-step type="ex:remove" name="remove-def">
     <p:output port="result" primary="true"/>
     <p:option name="href"/>                   <!-- URI of collection -->  
-    <p:option name="user"/>                   <!-- eXist password -->
-    <p:option name="password"/>               <!-- eXist username -->    
+    <p:option name="user" select="''"/>       <!-- eXist password -->
+    <p:option name="password" select="''"/>   <!-- eXist username -->   
     <p:option name="collection" select="''"/> <!-- name of subcollection to remove -->
     <p:option name="resource" select="''"/>   <!-- name of resource to remove -->
     
