@@ -45,6 +45,9 @@
     <p:variable name="parent-collection" select="replace(replace($href, '.*(/db.*)$', '$1'), '[//]$', '')">
       <p:empty/>
     </p:variable>
+    <p:variable name="clean-target" select="replace($target, '(.*)/$', '$1')" >
+      <p:empty />
+    </p:variable>
     
     <p:identity name="initial-request">
       <p:input port="source">
@@ -83,7 +86,7 @@
       <p:with-param name="user" select="$user" />
       <p:with-param name="password" select="$password" />
       <p:with-param name="parent-collection" select="$parent-collection" />
-      <p:with-param name="target" select="$target" />
+      <p:with-param name="target" select="$clean-target" />
       <p:with-param name="resource" select="$resource" />
       <p:with-param name="collection" select="$collection" />
     </wxp:resolve-placeholders>
@@ -130,6 +133,9 @@
     <p:variable name="parent-collection" select="replace(replace($href, '.*(/db.*)$', '$1'), '[//]$', '')">
       <p:empty/>
     </p:variable>
+    <p:variable name="clean-target" select="replace($target, '(.*)/$', '$1')" >
+      <p:empty />
+    </p:variable>
     
     <p:identity name="initial-request">
       <p:input port="source">
@@ -168,7 +174,7 @@
       <p:with-param name="user" select="$user" />
       <p:with-param name="password" select="$password" />
       <p:with-param name="parent-collection" select="$parent-collection" />
-      <p:with-param name="target" select="$target" />
+      <p:with-param name="target" select="$clean-target" />
       <p:with-param name="resource" select="$resource" />
       <p:with-param name="collection" select="$collection" />
     </wxp:resolve-placeholders>
