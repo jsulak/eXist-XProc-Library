@@ -42,7 +42,7 @@
     <p:variable name="base-uri" select="replace($href, '^(.*)/db/?.*$', '$1')">
       <p:empty />
     </p:variable>
-    <p:variable name="parent-collection" select="replace($href, '.*(/db.*[^//])[//]?$', '$1')">
+    <p:variable name="parent-collection" select="replace(replace($href, '.*(/db.*)$', '$1'), '[//]$', '')">
       <p:empty/>
     </p:variable>
     
@@ -101,8 +101,6 @@
       <p:with-option name="href" select="$base-uri"/>
     </ex:xquery>
     
-    <p:unwrap match="/*" />
-    
   </p:declare-step>
   
   
@@ -129,7 +127,7 @@
     <p:variable name="base-uri" select="replace($href, '^(.*)/db/?.*$', '$1')">
       <p:empty />
     </p:variable>
-    <p:variable name="parent-collection" select="replace($href, '.*(/db.*[^//])[//]?$', '$1')">
+    <p:variable name="parent-collection" select="replace(replace($href, '.*(/db.*)$', '$1'), '[//]$', '')">
       <p:empty/>
     </p:variable>
     
@@ -187,8 +185,6 @@
       <p:with-option name="password" select="$password"/>
       <p:with-option name="href" select="$base-uri"/>
     </ex:xquery>
-    
-    <p:unwrap match="/*" />
     
   </p:declare-step>
   
@@ -384,7 +380,7 @@
     <p:option name="collection" select="''"/> <!-- name of subcollection to remove -->
     <p:option name="resource" select="''"/>   <!-- name of resource to remove -->
     
-    <p:variable name="parent-collection" select="replace($href, '.*(/db.*[^//])[//]?$', '$1')">
+    <p:variable name="parent-collection" select="replace(replace($href, '.*(/db.*)$', '$1'), '[//]$', '')">
       <p:empty/>
     </p:variable>
     
@@ -442,16 +438,15 @@
       <p:with-option name="href" select="$base-uri"/>
     </ex:xquery>
 
-    <p:unwrap match="/*" />
-
   </p:declare-step>
 
 
   <p:documentation xmlns="http://www.w3.org/1999/xhtml">
     <h3>ex:xquery</h3>
     <p>The <code>ex:xquery</code> step executes an XQuery expression.</p>
-    <p>It expects the query to be wrapped in a <code>&lt;c:query></code>. It returns the result
-      of the expression in a <code>&lt;c:result></code>.</p>
+    <p>It expects the query to be wrapped in a <code>&lt;c:query></code>.  Any elements 
+      that appear in the result sequence will be treated as documents with the element as 
+      their document element (same as p:xquery).</p>  
   </p:documentation>
 
   <!-- TODO: handle sequence of documents? -->
@@ -460,7 +455,7 @@
 
   <p:declare-step type="ex:xquery" name="xquery-def">
     <p:input port="source" primary="true"/>
-    <p:output port="result" primary="true"/>
+    <p:output port="result" primary="true" sequence="true"/>
     <p:option name="href" required="true"/>     <!-- URI of eXist database -->
     <p:option name="user" select="''"/>         <!-- eXist username -->
     <p:option name="password" select="''"/>     <!-- eXist password -->
@@ -497,36 +492,11 @@
 
     <p:http-request/>
     
-    <!-- Put the result into an c:result element, and change the attribute namespaces -->
-    <p:xslt>
-      <p:input port="parameters">
-        <p:empty />
-      </p:input>
-      <p:input port="stylesheet">
-        <p:inline>
-          <xsl:stylesheet version="1.0">            
-            <xsl:template match="/">
-              <xsl:apply-templates select="c:response/c:body/exist:result" />
-            </xsl:template>            
-            <xsl:template match="exist:result">
-              <c:result>
-                <xsl:for-each select="@*">
-                  <xsl:attribute name="{concat('c:', local-name())}">
-                    <xsl:copy-of select="." />
-                  </xsl:attribute>
-                </xsl:for-each>
-                <xsl:apply-templates />
-              </c:result>
-            </xsl:template>            
-            <xsl:template match="@*|node()">
-              <xsl:copy>
-                <xsl:apply-templates select="@*|node()"/>
-              </xsl:copy>
-            </xsl:template>
-          </xsl:stylesheet>
-        </p:inline>
-      </p:input>
-    </p:xslt>
+    <!-- Make every top-level document it's own document -->
+    <p:for-each>
+      <p:iteration-source select="/c:response/c:body/exist:result/*" />
+      <p:identity />      
+    </p:for-each>
     
   </p:declare-step>
 
@@ -547,7 +517,7 @@
     <p:option name="password" select="''"/>       <!-- eXist password -->
     <p:option name="collection" required="true"/> <!-- subcollection to create -->
     
-    <p:variable name="parent-collection" select="replace($href, '.*(/db.*[^//])[//]?$', '$1')">
+    <p:variable name="parent-collection" select="replace(replace($href, '.*(/db.*)$', '$1'), '[//]$', '')">
       <p:empty/>
     </p:variable>
     <p:variable name="base-uri" select="replace($href, '^(.*)/db/?.*$', '$1')">
@@ -589,8 +559,6 @@
       <p:with-option name="password" select="$password"/>
       <p:with-option name="href" select="$base-uri"/>
     </ex:xquery>
-       
-    <p:unwrap match="/*" />
     
   </p:declare-step>
   
