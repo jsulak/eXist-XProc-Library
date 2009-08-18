@@ -236,7 +236,19 @@
             <p:empty />
           </p:with-option>
         </wxp:smart-http-get>
-        <p:unwrap match="//c:*" />
+
+        <!-- If it's XML, go ahead and unwrap it. -->
+        <!-- Otherwise, wrap it in a c:result -->
+        <p:choose>
+          <p:when test="//c:body[contains(@content-type, 'xml')]">
+            <p:unwrap match="//c:*"/>
+          </p:when>
+          <p:otherwise>
+            <p:filter select="//c:body"/>
+            <p:rename match="c:body" new-name="c:result" />
+          </p:otherwise>
+        </p:choose>
+        
         <p:add-attribute attribute-name="xml:base" match="/*">
           <p:with-option name="attribute-value" select="concat($clean-uri, '/', $resource)" />
         </p:add-attribute>
