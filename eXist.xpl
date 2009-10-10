@@ -367,17 +367,14 @@
 
 
 
-
   <p:documentation xmlns="http://www.w3.org/1999/xhtml">
     <h3>ex:remove</h3>
     <p>The <code>ex:remove</code> step removes a single resource or collection from the collection
       specified in the <code>href</code> option.</p>
     <p>It returns a <code>&lt;c:result/></code> containing the absolute URI of the deleted file.
-       The step fails if the resource does not exist or cannot be deleted. </p>
+      The step fails if the resource does not exist or cannot be deleted. </p>
   </p:documentation>
-
-  <!-- TODO: Replace POST request with DELETE request once it works in Calabash. -->
-
+  
   <p:declare-step type="ex:remove" name="remove-def">
     <p:output port="result" primary="true"/>
     <p:option name="href"/>                   <!-- URI of collection -->  
@@ -397,26 +394,16 @@
     <p:variable name="base-uri" select="replace($clean-uri, '^(.*)/db/?.*$', '$1')">
       <p:empty />
     </p:variable>
-
+    
     <p:identity name="initial-request">
       <p:input port="source">
         <p:inline>         
-           <c:query xmlns="http://exist.sourceforge.net/NS/exist" start="1" max="20" cache="no">
-             <c:text> 
-               declare namespace c="http://www.w3.org/ns/xproc-step";
-               let $resource := "${resource}" 
-               let $collection := "${collection}" 
-               let $login := xmldb:login("xmldb:exist:///db", "${user}", "${password}") 
-               let $response := if ($resource != '') 
-                                then xmldb:remove("${parent-collection}", "${resource}") 
-                                else xmldb:remove("${parent-collection}/${collection}")
-               return (element c:result { concat(request:get-url(), "${parent-collection}/${resource}${collection}") } )
-             </c:text>
-           </c:query>            
+          <c:request method="delete" status-only="true" detailed="true" auth-method="Basic" 
+            send-authorization="true" />       
         </p:inline>
       </p:input>
     </p:identity>
-
+    
     <!-- Abort step if wrong options specified -->
     <p:choose>
       <p:when test="($collection = '' and $resource = '') or ($collection != '' and $resource != '')">
@@ -426,24 +413,24 @@
         <p:identity />
       </p:otherwise>
     </p:choose>
-
-    <wxp:resolve-placeholders>
-      <p:input port="parameters">
-        <p:empty />
-      </p:input>
-      <p:with-param name="user" select="$user" />
-      <p:with-param name="password" select="$password" />
-      <p:with-param name="parent-collection" select="$parent-collection" />
-      <p:with-param name="resource" select="$resource" />
-      <p:with-param name="collection" select="$collection" />
-    </wxp:resolve-placeholders>
     
-    <ex:xquery>
-      <p:with-option name="user" select="$user"/>
-      <p:with-option name="password" select="$password"/>
-      <p:with-option name="href" select="$base-uri"/>
-    </ex:xquery>
-
+    <p:add-attribute match="/c:request" attribute-name="username" >
+      <p:with-option name="attribute-value" select="$user" />
+    </p:add-attribute>    
+    <p:add-attribute match="/c:request" attribute-name="password" >
+      <p:with-option name="attribute-value" select="$password" />
+    </p:add-attribute>
+    <p:add-attribute match="/c:request" attribute-name="href">
+      <p:with-option name="attribute-value" select="concat($clean-uri, '/', $resource, $collection)" />
+    </p:add-attribute>
+    
+    <p:http-request />
+    
+    <wxp:check-status success-status="200">
+      <p:with-option name="failonerror" select="'true'"/>
+      <p:with-option name="return-string" select="concat($clean-uri, '/', $resource, $collection)"/>
+    </wxp:check-status>
+        
   </p:declare-step>
 
 
