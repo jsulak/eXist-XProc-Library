@@ -5,6 +5,24 @@
   xmlns:saxon="http://saxon.sf.net/" xmlns:exist="http://exist.sourceforge.net/NS/exist"
   xmlns:wxp="http://www.wordsinboxes.com/xproc" xmlns:ex="http://www.wordsinboxes.com/xproc/exist" >
 
+<!-- 
+Copyright 2009 James Sulak
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+
   <p:documentation xmlns="http://www.w3.org/1999/xhtml">
     <div>
       <h1>eXist XProc Extension Library</h1>
