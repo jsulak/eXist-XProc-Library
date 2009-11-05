@@ -233,6 +233,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     <p:option name="password" select="''"/>            <!-- eXist password -->
     <p:option name="resource" select="''" />           <!-- resource to extract -->
     <p:option name="subcollections" select="'false'"/> <!-- extract subcollections? (boolean) -->
+    <p:option name="indent" select="'false'" />        <!-- indent output?  -->
     
     <!-- Create a uri without the trailing slash -->
     <p:variable name="clean-uri" select="replace($href, '(.*)/$', '$1')" >
@@ -246,7 +247,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
       </p:xpath-context>
       <p:when test="$resource != ''">        
         <wxp:smart-http-get>
-          <p:with-option name="href" select="concat($clean-uri, '/', $resource)" >
+          <p:with-option name="href" select="concat($clean-uri, '/', $resource, if ($indent = 'true') then '' else '?_indent=no')" >
             <p:empty />
           </p:with-option>          
           <p:with-option name="password" select="$password">
@@ -309,6 +310,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 <p:with-option name="resource" select="c:resource/@name"/>
                 <p:with-option name="user" select="$user" />
                 <p:with-option name="password" select="$password" />
+                <p:with-option name="indent" select="$indent" />
               </ex:extract>
             </p:when>
             <p:otherwise>
