@@ -3,7 +3,7 @@
   xmlns:xs="http://www.w3.org/2001/XMLSchema" 
   xmlns:cx="http://xmlcalabash.com/ns/extensions" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
   xmlns:saxon="http://saxon.sf.net/" xmlns:exist="http://exist.sourceforge.net/NS/exist"
-  xmlns:wxp="http://www.wordsinboxes.com/xproc" xmlns:ex="http://www.wordsinboxes.com/xproc/exist" >
+  xmlns:wxp="http://www.wordsinboxes.com/xproc" xmlns:ex="http://www.wordsinboxes.com/xproc/exist" version="1.0" >
 
 <!-- 
 Copyright 2009 James Sulak
