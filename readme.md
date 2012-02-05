@@ -114,7 +114,6 @@ Or query a collection:
       </p:input>
     </ex:xquery>
 </p:declare-step>
-
 ```
 
 ## Steps
@@ -234,7 +233,6 @@ Copies a resource or collection to a new location.
     <p:option name="collection" select="''"/>           <!-- name of collection to copy -->
     <p:option name="target" required="true" />          <!-- name of target collection -->
 </p:declare-step>
-
 ```
 
 If **resource** is specified, it copies that resource to the collection specified by **target**.  If **collection** is specified, then it copies that collection.  It is an error to specify both **collection** and **resource**.  The semantics of this step are the same as that of `<ex:move/>`.
@@ -244,7 +242,6 @@ For example, to copy the resource "all_well.xml" into the collection "/db/comedi
 ```
 <ex:copy href="http://localhost:8080/exist/rest/db/shakespeare/plays" user="user" password="password"
    resource="all_well.xml" target="/db/comedies"/>
-
 ```
 
 which returns:
@@ -280,7 +277,6 @@ Moves a resource or collection to a new location.
     <p:option name="collection" select="''"/>           <!-- name of collection to move -->
     <p:option name="target" required="true" />          <!-- name of target collection -->
 </p:declare-step>
-
 ```
 
 If **resource** is specified, it moves that resource to the collection specified by **target**.  If **collection** is specified, then it moves that collection.  It is an error to specify both **collection** and **resource**.  The semantics of this step are the same as that of `<ex:copy/>`.
